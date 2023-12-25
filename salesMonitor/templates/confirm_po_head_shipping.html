@@ -1,0 +1,16 @@
+{% extends "todaySalesBase.html" %}
+{% block content %}
+<h1>确认购货订单金额及头程运费</h1>
+<table class="table">
+  <tr>
+    <td>{{start_date|date:"Y-m-d"}} 到 </td><td>{{end_date|date:"Y-m-d"}}</td>
+  </tr>
+  <tr>
+    <td>总共下单购货金额:</td><td>¥{{po_amount|floatformat:-2}}</td>
+  </tr>
+  <tr>
+    <td>总共头程运费:</td><td>¥{{head_shipping_cost|floatformat:-2}}</td>
+  </tr>
+</table>
+{% include "submit_form_base.html" %}
+{% endblock %}

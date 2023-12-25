@@ -1,0 +1,27 @@
+{% extends "todaySalesBase.html" %}
+{% block content %}
+<h1>今日生产单</h1>
+<form action="" method="post" class="form"">
+    {% csrf_token %}
+    <br><br>
+    <input type="submit" value="直接下载所有今日生产单">
+</form>
+<br><br>
+<h3>
+生产单制作的步骤
+</h3>
+<ul>
+  <li>
+    上传精斗云下载下来的<a href="{% url 'update_shenzhen_inventory' %}">F199库存表</a>
+  </li>
+  <li>
+    上传精斗云下载下来的<a href="{% url 'update_purchasing_orders' %}">采购订单跟踪表</a>,留意要下载最近3个月的，勾选未入库的和部分入库选项
+  </li>
+  <li>
+    上传亚马逊后台下载下来的<a href="{% url 'update_restock_report' %}">restock report</a>
+  </li>
+  <li>
+    上传亚马逊后台下载下来的<a href="{% url 'update_7d_orders' %}">过去7天销售</a>
+  </li>
+</ul>
+{% endblock %}

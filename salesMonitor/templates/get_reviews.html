@@ -1,0 +1,139 @@
+{% extends "todaySalesBase.html" %}
+{% block content %}
+<h1>Amazon Review爬虫</h1>
+  <form action="" method="post" class="form" id='form' novalidate enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ form }}
+      <br>
+      <input type="submit" value="上传instant data scraper下载下来的csv文件">
+  </form>
+  <p id="log"></p>
+  <div id="color_chart" style="height:550px;"></div>
+  <div id="size_chart" style="height:550px;"></div>
+{% endblock %}
+{% block script %}
+<script src="/static/echart/echarts.min.js"></script>
+<script>
+  $(function(){
+    function upload(event) {
+      event.preventDefault();
+      var data = new FormData($('form').get(0));
+
+      $.ajax({
+          url: $(this).attr('action'),
+          type: $(this).attr('method'),
+          data: data,
+          cache: false,
+          processData: false,
+          contentType: false,
+          success: function(data) {
+            var counter_size_color = data.counter_size_color;
+            var day_range_tip = data.day_range_tip;
+            console.log(counter_size_color.color);
+            if(counter_size_color.size != undefined){
+              var size_series_data = [];
+              var size_selected = {};
+              for(var j = 0; j < counter_size_color.size.name.length; j++){
+                size_series_data.push({
+                  name: counter_size_color.size.name[j],
+                  value: counter_size_color.size.value[j]
+                });
+              }
+              var option_size = {
+                  title: {
+                      text: day_range_tip + '留评尺寸数量统计',
+
+                      left: 'center'
+                  },
+                  tooltip: {
+                      trigger: 'item',
+                      formatter: '{a} <br/>{b} : {c} ({d}%)'
+                  },
+                  legend: {
+                      type: 'scroll',
+                      orient: 'vertical',
+                      right: 10,
+                      top: 20,
+                      bottom: 20,
+                      data: counter_size_color.size.name
+                  },
+                  series: [
+                      {
+                          name: '尺寸',
+                          type: 'pie',
+                          radius: '55%',
+                          center: ['40%', '50%'],
+                          data: size_series_data,
+                          emphasis: {
+                              itemStyle: {
+                                  shadowBlur: 10,
+                                  shadowOffsetX: 0,
+                                  shadowColor: 'rgba(0, 0, 0, 0.5)'
+                              }
+                          }
+                      }
+                  ]
+              };
+              var size_chart = echarts.init(document.getElementById('size_chart'));
+              size_chart.setOption(option_size);
+            }else{
+              var size_chart = echarts.dispose(document.getElementById('size_chart'));
+            };
+            if(counter_size_color.color != undefined){
+              var color_series_data = [];
+              for(var j = 0; j < counter_size_color.color.name.length; j++){
+                color_series_data.push({
+                  name: counter_size_color.color.name[j],
+                  value: counter_size_color.color.value[j]
+                });
+              }
+              var option_color = {
+                  title: {
+                      text: day_range_tip + '留评颜色数量统计',
+                      left: 'center'
+                  },
+                  tooltip: {
+                      trigger: 'item',
+                      formatter: '{a} <br/>{b} : {c} ({d}%)'
+                  },
+                  legend: {
+                      type: 'scroll',
+                      orient: 'vertical',
+                      right: 10,
+                      top: 20,
+                      bottom: 20,
+                      data: counter_size_color.color.name
+                  },
+                  series: [
+                      {
+                          name: '颜色',
+                          type: 'pie',
+                          radius: '55%',
+                          center: ['40%', '50%'],
+                          data: color_series_data,
+                          emphasis: {
+                              itemStyle: {
+                                  shadowBlur: 10,
+                                  shadowOffsetX: 0,
+                                  shadowColor: 'rgba(0, 0, 0, 0.5)'
+                              }
+                          }
+                      }
+                  ]
+              };
+              var color_chart = echarts.init(document.getElementById('color_chart'));
+              color_chart.setOption(option_color);
+            }else{
+              var color_chart = echarts.dispose(document.getElementById('color_chart'));
+            }
+          }
+      });
+      return false;
+    }
+
+    $(function() {
+        $('form').submit(upload);
+    });
+  });
+</script>
+{% endblock %}
