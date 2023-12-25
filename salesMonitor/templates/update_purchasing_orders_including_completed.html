@@ -1,8 +1,0 @@
-{% extends "todaySalesBase.html" %}
-{% block content %}
-<h1>更新购货订单（包含已入库的）</h1>
-<h3 style='color:red'>{{correction_tip}}</h3>
-<h3 style='color:green'>{{ update_completed_tip }}</h3>
-{% include "upload_form_base.html" %}
-<p><b>提示：</b>留意要下载最近3个月的，完全勾选3种入库选项</p>
-{% endblock %}
