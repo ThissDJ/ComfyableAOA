@@ -1,0 +1,93 @@
+{% extends "todaySalesBase.html" %}
+{% block css %}
+<link href="/static/bootstrap-datepicker-1.9.0-dist/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+<style>
+.sticky-top th {
+  background: white;
+  position: sticky;
+  top: 45px; /* Don't forget this, required for the stickiness */
+  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+}
+</style>
+
+{% endblock %}
+{% block content %}
+<h1>在途FBA 货件</h1>
+<table class="table">
+  <tbody>
+    <thead class='sticky-top'>
+      {% for title in titles %}
+      <th>{{title}}</th>
+      {% endfor %}
+    </thead>
+      <thead class='sticky-top'>
+        <th>FBA ID</th>
+        <th>FBA 名字</th>
+        <th>发货日期</th>
+        <th>预计接收日期</th>
+      </thead>
+      {% for fba_shipment in fba_shipments %}
+      <tr>
+        <td scope="row">{{fba_shipment.shipment_id}}</td>
+        <td>{{fba_shipment.shipment_name}}</td>
+        <td>
+          <div class="input-group date">
+              <input type="text" class="form-control" value="{{fba_shipment.shipped_date|date:"Y/m/d"}}" data-fba-shipment-id="{{fba_shipment.shipment_id}}" data-date-type="ship_date">
+              <div class="input-group-addon">
+                  <span class="glyphicon glyphicon-th"></span>
+              </div>
+          </div>
+        </td>
+        <td>
+          <div class="input-group date">
+              <input type="text" class="form-control" value="{{fba_shipment.estimated_receiving_date|date:"Y/m/d"}}" data-fba-shipment-id="{{fba_shipment.shipment_id}}" data-date-type="estimated_receiving_date">
+              <div class="input-group-addon">
+                  <span class="glyphicon glyphicon-th"></span>
+              </div>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+
+  </tbody>
+</table>
+{% endblock %}
+{% block script %}
+<script src="/static/bootstrap-datepicker-1.9.0-dist/js/bootstrap-datepicker.min.js"></script>
+<script src="/static/bootstrap-datepicker-1.9.0-dist/locales/bootstrap-datepicker.zh-CN.min.js" charset="UTF-8"></script>
+<script>
+  function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              // Does this cookie string begin with the name we want?
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  $(function(){
+    $('.input-group.date input').datepicker({
+      format: "yyyy/mm/dd",
+      language: "zh-CN",
+    }).on('changeDate', function(e) {
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", "", true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.setRequestHeader("X-CSRFToken", csrftoken);
+      xhr.send(JSON.stringify({
+          fba_shipment_id: $(this).data('fba-shipment-id'),
+          date_type: $(this).data('date-type'),
+          date: $(this).val()
+      }));
+    });
+  });
+</script>
+{% endblock %}

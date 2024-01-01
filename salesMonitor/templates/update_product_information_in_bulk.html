@@ -1,0 +1,16 @@
+{% extends "todaySalesBase.html" %}
+
+{% block content %}
+<h1>批量更新商品信息</h1>
+<h3 style='color:red'>{{correction_tip}}</h3>
+<h3 style='color:green'>{{ update_completed_tip }}</h3>
+<form action="" method="post" class="form" novalidate enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form }}
+    <br><br>
+    <input type="submit" value="上传商品信息 excel文件">
+</form>
+<p>
+  第一行标题为 SKU 长 宽 高 重量 是否强制使用实重
+</p>
+{% endblock %}
