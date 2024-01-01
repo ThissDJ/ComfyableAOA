@@ -1,0 +1,16 @@
+{% extends "todaySalesBase.html" %}
+{% block content %}
+<h1>
+{% if success_updated_fba_shipment_id %}
+{{ success_updated_fba_shipment_id }}已更新完毕，继续更新下一个FBA货件明细
+{% else %}
+更新FBA货件明细
+{% endif %}
+</h1>
+<form action="" method="post" class="form" novalidate enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form }}
+    <br><br>
+    <input type="submit" value="上传">
+</form>
+{% endblock %}

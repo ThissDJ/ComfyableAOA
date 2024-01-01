@@ -1,0 +1,72 @@
+
+{% extends "todaySalesBase.html" %}
+{% block css %}
+<link href="/static/bootstrap-datepicker-1.9.0-dist/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+<style>
+
+</style>
+{% endblock %}
+{% block content %}
+<!-- Large modal -->
+<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <canvas id="myChart1" width="1200" height="500"></canvas>
+    </div>
+  </div>
+</div>
+<h1>对{{production_plan_progress.production_plan_number}}进行分单</h1>
+<h4>SKU：{{production_plan_progress.sku}} || 数量：{{production_plan_progress.qty}}
+   </h4>
+
+<table class="table">
+  <tbody>
+       <thead>
+         <th>分包商名</th>
+         <th>数量</th>
+       </thead>
+       {% for ppp_subcontractor in subcontractors_list %}
+       <tr class='ppp_subcontractor'>
+         <td scope="row">
+           <input type="text" class='subcontractor_name' value="{% if ppp_subcontractor != '' %}{% if forloop.counter0 == 0 %}{{ppp_subcontractor.manufacturer_number}} {% endif %}{{ppp_subcontractor.subcontractor_name}}{% else %}{% endif %}" data-parament_name="subcontractor_name" {% if forloop.counter0 == 0 %}disabled data-contractor="1"{% else %}data-contractor="0"{% endif %}>
+         </td>
+         <td>
+           <input type="text" class='qty' value="{% if subcontractor != '' %}{{ppp_subcontractor.qty}}{% endif %}" data-parament_name="qty">
+         </td>
+       </tr>
+       {% endfor %}
+  </tbody>
+</table>
+<button class='formSubmit'>提交</button>
+{% endblock %}
+{% block script %}
+<script>
+
+$(function(){
+  $('.formSubmit').on('click', function(evt){
+    var partial_url = "";
+    var splitting_number = 0;
+    $('tr.ppp_subcontractor').each(function(i, obj){
+      splitting_number += 1;
+      partial_url += 'subcontractor_name' + splitting_number + "=" + $(this).find('input.subcontractor_name').val() + '&';
+      partial_url += 'qty' + splitting_number + '=' + $(this).find('input.qty').val() + '&';
+      partial_url += 'ppp_id' + splitting_number + '=' + $(this).find('input.subcontractor_name').data('contractor') + '&';
+
+    });
+    var url = "{% url 'split_production_plan' production_plan_progress.id %}" +  "?" + partial_url
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send({});
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == XMLHttpRequest.DONE) {
+            var response_json = JSON.parse(xhr.response);
+            if(response_json['response'] === '成功'){
+              alert('分单成功');
+            }
+        };
+    };
+  });
+});
+</script>
+{% endblock %}

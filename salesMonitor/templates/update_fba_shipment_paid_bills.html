@@ -1,0 +1,13 @@
+{% extends "todaySalesBase.html" %}
+{% block content %}
+<h1>更新发货单审批结算记录</h1>
+{% if error_tip %}
+<h3 style='color:red'>{{error_tip}}</h3>
+{% endif %}
+<form action="" method="post" class="form" novalidate enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form }}
+    <br><br>
+    <input type="submit" value="上传">
+</form>
+{% endblock %}

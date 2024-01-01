@@ -1,0 +1,14 @@
+{% extends "todaySalesBase.html" %}
+{% block content %}
+<h1>导入商品中文品名</h1>
+{% if error_tip %}
+<h3 style='color:red'>{{error_tip}}</h3>
+{% endif %}
+{% if sucess_tip %}
+<h3 style='color:green'>{{sucess_tip}}</h3>
+{% endif %}
+{% include "upload_form_base.html" %}
+<p>
+  去精斗云上面下载商品表
+</p>
+{% endblock %}
