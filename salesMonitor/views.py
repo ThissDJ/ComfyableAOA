@@ -1397,8 +1397,12 @@ def export_sku_inbound_shipping_cost(request):
     if request.method == 'POST':
         year_month = request.POST['year_month']
         [year, month] = split_year_month(year_month)
-        reference_date = datetime.date(year= year, month=month+1, day = 1)
-        reference_date_for_inventory_value = datetime.date(year= year, month=month+1, day = 4)
+        if month == 12:
+            reference_date = datetime.date(year= year + 1, month=1, day = 1)
+            reference_date_for_inventory_value = datetime.date(year= year + 1, month=1, day = 4)
+        else:
+            reference_date = datetime.date(year= year, month=month+1, day = 1)
+            reference_date_for_inventory_value = datetime.date(year= year, month=month+1, day = 4)
         shipment_ids_in_a_time_range = [fba_shipment.shipment_id for fba_shipment in FbaShipment.objects.filter(shipped_date__range = [reference_date - datetime.timedelta(days=30*SKU_UNIT_SHIPPING_DATE_MONTH_RANGE[0]), reference_date - datetime.timedelta(days=30*SKU_UNIT_SHIPPING_DATE_MONTH_RANGE[1])])]
         sku_list_lack_of_product_information = [k for k, v in stat_sku_unit_shipping_cost_in_a_shipment_id_list(shipment_ids_in_a_time_range).items() if v == 0.0]
         if sku_list_lack_of_product_information != []:
