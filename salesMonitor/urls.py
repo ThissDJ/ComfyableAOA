@@ -1,5 +1,7 @@
 from django.urls import path
 
+from salesMonitor import amazon
+
 from . import views
 
 urlpatterns = [
@@ -73,5 +75,13 @@ urlpatterns = [
     path('find_product_information_by_fnsku', views.find_product_information_by_fnsku, name='find_product_information_by_fnsku'),
     path('update_product_chinese_name_by_uploading', views.update_product_chinese_name_by_uploading, name='update_product_chinese_name_by_uploading'),
     path('update_transparency_label_required_sku_by_uploading', views.update_transparency_label_required_sku_by_uploading, name='update_transparency_label_required_sku_by_uploading'),
+
+    path('get_order', views.get_order, name='get_order'),
+    path('post_order', views.post_order_, name='post_order'),
+    
+    path('amazon_authorization', amazon.amazon_authorization, name='amazon_authorization'),
+    path('generate_transaction_report', amazon.generate_transaction_report, name='generate_transaction_report'),
+    # path('generate_transaction_report_sdk', amazon.generate_rpt_using_sdk, name='generate_transaction_report_sdk'),
+    path('read_csv_and_process_report', amazon.read_csv_and_process_report, name='read_csv_and_process_report')
 
 ]

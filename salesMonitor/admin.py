@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import  Product, TodayProductSales, Last7dayProductSales, \
+from .models import  DownloadedReport, Order, OrderItem, Product, TodayProductSales, Last7dayProductSales, \
     DailySalesLastYear, FbaInventory, Inventory, ReceivablePurchasedQty, FulfillmentCenterCodeCountry, \
     HistoryTodayProductSales, HistoryTodaySales ,\
     FbaShipment, ShippedSkuQty, ReceivedSkuQty, RemoteFulfillmentSku, Upc, SkuUpc, FbaShipmentPaidBill, \
@@ -40,6 +40,9 @@ admin.site.register(ProfitLossTable)
 admin.site.register(CurrencyRate)
 admin.site.register(ProductionStageTypeParameter)
 admin.site.register(SkuProductionStageTypeParameter)
+admin.site.register(OrderItem)
+admin.site.register(Order)
+admin.site.register(DownloadedReport)
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):

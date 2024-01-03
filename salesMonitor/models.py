@@ -582,3 +582,43 @@ class SkuProductionStageTypeParameter(models.Model):
 
     def __str__(self):
         return '%s %s' %(self.sku, self.production_type_name)
+
+class DownloadedReport(models.Model):
+    created_at = models.DateField(null=False, auto_now_add=True, blank=False)
+    updated_at = models.DateField(null=False, auto_now=True, blank=False)
+    settlement_start_date = models.DateField(null=False, blank=False)
+    settlement_end_date = models.DateField(null=False, blank=False)
+    deposite_date = models.DateField(null=False, blank=False)
+    total_amount = models.FloatField()
+    settlement_id = models.FloatField()
+    currency = models.CharField(max_length=3,default='INR')
+
+class Order(models.Model):
+    created_at = models.DateField(null=False, auto_now_add=True, blank=False)
+    updated_at = models.DateField(null=False, auto_now_add=True,blank=False)
+    downloaded_file_id = models.ForeignKey(DownloadedReport, on_delete=models.CASCADE)
+    order_number = models.CharField(max_length=7, unique=True)
+    shipment_id = models.CharField(max_length=20, unique=True)
+    marketplace_name = models.CharField(max_length=20, unique=True)
+    transaction_amount=models.FloatField(default=0)
+    transaction_type = models.CharField(max_length=20)
+    # def __str__(self):
+    #     return f'{self.user_name} - {self.is_business_order}'
+
+class OrderItem(models.Model):
+    created_at = models.DateField(null=False, auto_now_add=True, blank=False)
+    updated_at = models.DateField(null=False, auto_now_add=True,blank=False)
+    order_item_id = models.CharField(max_length=255)
+    sku = models.CharField(max_length=255)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    igst_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    tds_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    commission = models.DecimalField(max_digits=10, decimal_places=2)
+    commission_igst = models.DecimalField(max_digits=10, decimal_places=2)
+    fix_closing_fee = models.DecimalField(max_digits=10, decimal_places=2)
+    fix_closing_fee_igst = models.DecimalField(max_digits=10, decimal_places=2)
+    order_id = models.ForeignKey(Order, on_delete=models.CASCADE)
+    
+    # def __str__(self):
+    #     return f'{self.order_item_id} - {self.asin}'
