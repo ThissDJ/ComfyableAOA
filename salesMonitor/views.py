@@ -601,6 +601,8 @@ def sales_channel_converting(x):
         ret = 'AE'
     elif x == 'Amazon.co.jp':
         ret = 'JP'
+    elif x == 'Amazon.com.br':
+        ret = 'BR'
     return ret
 
 def harmonize_price(price, sales_channel):
