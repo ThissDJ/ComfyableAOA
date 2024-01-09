@@ -14,4 +14,3 @@ sqlparse==0.4.2
 xlrd==2.0.1
 cryptography==41.0.7
 requests==2.31.0
-python-amazon-sp-api==1.4.0
