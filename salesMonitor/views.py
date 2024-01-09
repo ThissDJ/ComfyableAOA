@@ -21,7 +21,7 @@ import re
 import json
 from django.db.models import Sum, Q
 from django.http import JsonResponse
-from salesMonitor.models import Order, Product, TodayProductSales, Last7dayProductSales, \
+from salesMonitor.models import Product, TodayProductSales, Last7dayProductSales, \
                                 DailySalesLastYear, FbaInventory, RemoteFulfillmentSku, \
                                 ReceivablePurchasedQty, HistoryTodayProductSales,\
                                 NearestReceivablePurchasedQty ,\
