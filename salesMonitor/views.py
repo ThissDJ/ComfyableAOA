@@ -4501,39 +4501,3 @@ def update_transparency_label_required_sku_by_uploading(request):
             'form':UploadFileForm()
         }
     return HttpResponse(template.render(context, request))
-
-
-# @login_required
-def get_order(request):
-    if request.method == "GET":
-        queryset = Order.objects.all()
-        return HttpResponse(queryset, request)
-
-from django.shortcuts import render
-
-@csrf_exempt
-def post_order_(request):
-
-    # form = OrderForm(request.POST)
-     
-    # if form.is_valid():
-    #     form.save()
-    #     return HttpResponse(form)
-
-
-    if request.method == 'POST':
-        order = Order.objects.create(
-            user_name="ABC",
-            is_business_order= True,
-            total_amount=10
-            )
-        # order_item = OrderItem.objects.create(
-        #     order=order,
-        #     order_item_id=100,
-        #     assin=10,
-        #     amount=120
-        # )
-        print(order)
-        # order.save()
-        return HttpResponse(order, request)
-    
