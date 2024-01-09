@@ -586,39 +586,37 @@ class SkuProductionStageTypeParameter(models.Model):
 class DownloadedReport(models.Model):
     created_at = models.DateField(null=False, auto_now_add=True, blank=False)
     updated_at = models.DateField(null=False, auto_now=True, blank=False)
-    settlement_start_date = models.DateField(null=False, blank=False)
-    settlement_end_date = models.DateField(null=False, blank=False)
-    deposite_date = models.DateField(null=False, blank=False)
-    total_amount = models.FloatField()
-    settlement_id = models.FloatField()
-    currency = models.CharField(max_length=3,default='INR')
+    report_id = models.CharField(max_length=10)
+    report_start_time = models.DateField(null=False, blank=False)
+    report_end_time = models.DateField(null=False, blank=False)
 
-class Order(models.Model):
+class PaymentTransactionDetail(models.Model):
     created_at = models.DateField(null=False, auto_now_add=True, blank=False)
     updated_at = models.DateField(null=False, auto_now_add=True,blank=False)
     downloaded_file_id = models.ForeignKey(DownloadedReport, on_delete=models.CASCADE)
-    order_number = models.CharField(max_length=7, unique=True)
-    shipment_id = models.CharField(max_length=20, unique=True)
-    marketplace_name = models.CharField(max_length=20, unique=True)
-    transaction_amount=models.FloatField(default=0)
-    transaction_type = models.CharField(max_length=20)
-    # def __str__(self):
-    #     return f'{self.user_name} - {self.is_business_order}'
+    date_time = models.DateTimeField(null=False, blank=False)
+    settlement_id = models.CharField(max_length=20)
+    type = models.CharField(max_length=30)
+    order_id = models.CharField(max_length=20)
+    sku = models.CharField(max_length=20)
+    description=models.CharField(max_length=500)
+    quantity = models.IntegerField(default=0)
+    marketplace = models.CharField(max_length=20)
+    fulfillment = models.CharField(max_length=20)
+    order_city = models.CharField(max_length=20)
+    order_state = models.CharField(max_length=20)
+    order_postal = models.CharField(max_length=20)
+    product_sales = models.FloatField(default=0)
+    shipping_credits = models.FloatField(default=0)
+    gift_wrap_credits = models.FloatField(default=0)
+    promotional_rebates = models.FloatField(default=0)
+    sales_tax_collected = models.FloatField(default=0)
+    low_value_goods = models.FloatField(default=0)
+    selling_fees = models.FloatField(default=0)
+    fba_fees = models.FloatField(default=0)
+    other_transaction_fees = models.FloatField(default=0)
+    other = models.FloatField(default=0)
+    total = models.FloatField(default=0)
 
-class OrderItem(models.Model):
-    created_at = models.DateField(null=False, auto_now_add=True, blank=False)
-    updated_at = models.DateField(null=False, auto_now_add=True,blank=False)
-    order_item_id = models.CharField(max_length=255)
-    sku = models.CharField(max_length=255)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    tax_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    igst_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    tds_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    commission = models.DecimalField(max_digits=10, decimal_places=2)
-    commission_igst = models.DecimalField(max_digits=10, decimal_places=2)
-    fix_closing_fee = models.DecimalField(max_digits=10, decimal_places=2)
-    fix_closing_fee_igst = models.DecimalField(max_digits=10, decimal_places=2)
-    order_id = models.ForeignKey(Order, on_delete=models.CASCADE)
-    
-    # def __str__(self):
-    #     return f'{self.order_item_id} - {self.asin}'
+    def save_to_database(self):
+        self.save()

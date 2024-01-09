@@ -1,23 +1,23 @@
 import os
-import csv
-import csv
-from django.http import JsonResponse
-# from asgiref.sync import sync_to_async
-from django.views.decorators.csrf import csrf_exempt  # Import this decorator
-from datetime import datetime
-from django.utils import timezone
-import requests
-from io import StringIO
 import json
-from salesMonitor.models import DownloadedReport
-from sp_api.api import ReportsV2
-from sp_api.api import Orders
-from sp_api.api import Reports
-from sp_api.base import Marketplaces,SellingApiException
+import requests
+import csv
 import gzip
-from cryptography.hazmat.primitives import padding
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import base64
+from dotenv import load_dotenv
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import padding
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+from salesMonitor.models import DownloadedReport, PaymentTransactionDetail
+
+# from sp_api.api import ReportsV2
+# from sp_api.api import Orders
+# from sp_api.api import Reports
+# from sp_api.base import Marketplaces,SellingApiException
 
 # Initialize global variables
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -25,21 +25,24 @@ accessToken = ''
 cronRunning = False
 token_time_out = 1800000  # milliseconds
 auth_time = 0
+# Load environment variables from .env
+load_dotenv()
+
 credentials=dict(
-        refresh_token='Atzr|IwEBIK9iYLvNijeYQ9gmWmQ87344f37e7SYk37WG1Qc6gkN3TvDl-NYwO3IoH9IogzgY9MePsuj6jgEXvQYxFGCfMHxx_6dJgYMhKrNm8uzwLAUM8G08VI60XHfWfGFZAiL5Mu2OoR-yCIBjvXghZeg9ipelBl30RonQHzwbgObdVMD8LWJ58yTXLux9DokYwLQIDICO2BFgG2FeUCkwxHf_TrWurZ4F_CiZfRZbAlUmINMGy7pZQMlf7GRGT5ALEwgL_CpePdeu3MUB9-Dtp0gOol6wPqPuw-g_ZSycHmfW3sZlLfoWBfDp-GgbMn0qzZOYFuE',
-        lwa_app_id='amzn1.application-oa2-client.42c11463644c44ce8b2461c532817303',
-        lwa_client_secret='00fac4478e450c9579ebe9362ad30e70abc9c5ceb00eec994f95378a3e9903e2'
+        refresh_token=os.getenv("SELLING_PARTNER_APP_REFRESH_TOKEN"),
+        lwa_app_id=os.getenv("SELLING_PARTNER_APP_CLIENT_ID"),
+        lwa_client_secret=os.getenv("SELLING_PARTNER_APP_CLIENT_SECRET")
     )
 
 @csrf_exempt
-def amazon_authorization(request):
+def amazon_authorization():
     global accessToken, auth_time
 
     current_store = {
             "grant_type": 'refresh_token',
-            "client_id": "amzn1.application-oa2-client.42c11463644c44ce8b2461c532817303",
-            "client_secret": "00fac4478e450c9579ebe9362ad30e70abc9c5ceb00eec994f95378a3e9903e2",
-            "refresh_token": "Atzr|IwEBIK9iYLvNijeYQ9gmWmQ87344f37e7SYk37WG1Qc6gkN3TvDl-NYwO3IoH9IogzgY9MePsuj6jgEXvQYxFGCfMHxx_6dJgYMhKrNm8uzwLAUM8G08VI60XHfWfGFZAiL5Mu2OoR-yCIBjvXghZeg9ipelBl30RonQHzwbgObdVMD8LWJ58yTXLux9DokYwLQIDICO2BFgG2FeUCkwxHf_TrWurZ4F_CiZfRZbAlUmINMGy7pZQMlf7GRGT5ALEwgL_CpePdeu3MUB9-Dtp0gOol6wPqPuw-g_ZSycHmfW3sZlLfoWBfDp-GgbMn0qzZOYFuE",
+            "client_id": os.getenv("SELLING_PARTNER_APP_CLIENT_ID"),
+            "client_secret": os.getenv("SELLING_PARTNER_APP_CLIENT_SECRET"),
+            "refresh_token": os.getenv("SELLING_PARTNER_APP_REFRESH_TOKEN"),
         }  # Adjust based on your data
 
     if auth_time != 0 and (datetime.now().timestamp() * 1000 - auth_time) <= token_time_out:
@@ -75,56 +78,15 @@ def amazon_authorization(request):
         # Handle request exceptions, such as network errors
         return JsonResponse({'error': f'Request failed: {str(e)}'}, status=500)
 
-# def generate_transaction_report(request):
-#     global accessToken, auth_time
-
-#     amazon_authorization(request)
-
-#     headers = {'x-amz-access-token': accessToken}
-
-#     # Replace 'https://api.example.com/endpoint' with the actual API endpoint URL
-#     api_url = 'https://sellingpartnerapi-eu.amazon.com/reports/2020-09-04/reports?reportTypes=GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE_V2&marketplaceIds=A21TJRUUN4KGV'
-
-#     try:
-#         document_data= get_report_document('amzn1.spdoc.1.4.eu.13e1d40e-46a1-4fdb-ab86-17453cc9a565.T2A4TH4A8KDW6L.1118')
-#         if document_data['status'] == 200:
-#             print(document_data['data']['url'])
-#             download_report_response = download_report(document_data['data']['url'], document_data['data']["encryptionDetails"])
-#             # return JsonResponse(download_report_response, status=200,safe=False)
-#             return JsonResponse(download_report_response, status=download_report_response['status'])
-#         else: 
-#             return JsonResponse({})
-#         # # Make a POST request to the API
-#         # response = requests.get(api_url,headers=headers)
-#         # # Check if the request was successful (status code 200)
-#         # if response.status_code == 200:
-#         #     # Parse the JSON response
-#         #     report_response = response.json()
-           
-#         #     if len(report_response['payload']) <0:
-#         #         return {'error': "Report not found"}
-#         #     else:
-#         #         report_response= get_report_document(report_response['payload'][0]['reportDocumentId'])
-#         #         # return JsonResponse(report_response['payload'], status=200,safe=False)
-#         #         return JsonResponse(report_response, status=report_response['status'],safe=False)
-
-#         # else:
-#         #     # If the request was not successful, return an error response
-#         #     return JsonResponse(response.json(), status=response.status_code)
-
-#     except requests.RequestException as e:
-#         # Handle request exceptions, such as network errors
-#         return JsonResponse({'error': f'Request failed: {str(e)}'}, status=500)
-
 def generate_transaction_report(request):
     global accessToken, auth_time
 
-    amazon_authorization(request)
-
+    amazon_authorization()
+    # return JsonResponse({"message": "Access token generated"}, status=200) 
     headers = {'x-amz-access-token': accessToken}
 
     # Replace 'https://api.example.com/endpoint' with the actual API endpoint URL
-    api_url = 'https://sellingpartnerapi-eu.amazon.com/reports/2020-09-04/reports?reportTypes=GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE_V2&marketplaceIds=A21TJRUUN4KGV'
+    api_url = 'https://sellingpartnerapi-fe.amazon.com/reports/2020-09-04/reports?reportTypes=GET_DATE_RANGE_FINANCIAL_TRANSACTION_DATA&marketplaceIds=A39IBJ37TRP1C6'
 
     try:
 
@@ -134,57 +96,68 @@ def generate_transaction_report(request):
         if response.status_code == 200:
             # Parse the JSON response
             report_response = response.json()
-           
             if len(report_response['payload']) <0:
                 return {'error': "Report not found"}
             else:
+                current_report_data= report_response['payload'][0]
+                # Check if a record with the same report_id already exists
+                existing_report = DownloadedReport.objects.filter(report_id=current_report_data['reportId']).first()
+                
+                if existing_report:
+                    print(f"Report with report_id '{current_report_data['reportId']}' already exists in the database.")
+                    return JsonResponse({"message":f"Report with report_id '{current_report_data['reportId']}' already exists in the database."}, status=403) 
+                
                 document_data= get_report_document(report_response['payload'][0]['reportDocumentId'])
                 if document_data['status'] == 200:
                     download_report_response = download_report(document_data['data']['url'], document_data['data']["encryptionDetails"])
-                    
                     # Check if download_report_response is not None before accessing its attributes
                     if download_report_response is not None:
+                        read_csv_and_process_report(current_report_data, download_report_response.get('filename', ''))
+                        print("Done",download_report_response)
                         return JsonResponse(download_report_response, status=download_report_response.get('status', 200))
                     else:
-                        return JsonResponse({}, status=500)  # Return an appropriate error response
+                        return JsonResponse({"message":"Error while downloading report"}, status=500)  # Return an appropriate error response
                 else:
                      # If the request was not successful, return an error response
                     return JsonResponse(response.json(), status=response.status_code)
 
         else:
-            return JsonResponse({}, status=500)  # Return an appropriate error response
+            # If the request was not successful, return an error response
+            return {"data":response.json(), "status":response['status_code']}
         
     except Exception as e:
         print(f"An error occurred: {str(e)}")
         return JsonResponse({}, status=500)  # Return an appropriate error response
 
+# Function to get the document content of a report
 def get_report_document(reportDocumentId):
     global accessToken
 
     headers = {
-       "contentType":"text/tab-separated-values; charset=UTF-8",
+        "contentType": "text/tab-separated-values; charset=UTF-8",
         'x-amz-access-token': accessToken,
-
     }
 
-    api_url = 'https://sellingpartnerapi-eu.amazon.com/reports/2020-09-04/documents/' + reportDocumentId
+    api_url = 'https://sellingpartnerapi-fe.amazon.com/reports/2020-09-04/documents/' + reportDocumentId
 
     try:
         # Make a GET request to the API
         response = requests.get(api_url, headers=headers)
+
         # Check if the request was successful (status code 200)
         if response.status_code == 200:
             # Parse the JSON response
             report_response = response.json()
-            return {"data":report_response['payload'], 'status':200}
+            return {"data": report_response['payload'], 'status': 200}
         else:
             # If the request was not successful, return an error response
-            return {"data":response.json(), "status":response.status_code}
+            return {"data": response.json(), "status": response.status_code}
 
     except requests.RequestException as e:
         # Handle request exceptions, such as network errors
-        return {'error': f'Request failed: {str(e)}', 'status':500}
-    
+        return {'error': f'Request failed: {str(e)}', 'status': 500}
+       
+# Function for AES CBC decryption
 def ase_cbc_decryptor(key, iv, encryption):
     cipher = Cipher(algorithms.AES(base64.b64decode(key)), modes.CBC(base64.b64decode(iv)))
     decryptor = cipher.decryptor()
@@ -192,6 +165,7 @@ def ase_cbc_decryptor(key, iv, encryption):
     unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
     unpaded_text = unpadder.update(decrypted_text)
     return unpaded_text + unpadder.finalize()
+
     
 def get_report_document_content(key, iv, url, compression_type=None):
     resp = requests.get(url=url)
@@ -224,135 +198,134 @@ def get_report_document_content(key, iv, url, compression_type=None):
         # Write the remaining rows
         csv_writer.writerows(csv_reader)
 
-    return {'message': f'CSV file ({filename}) generated successfully', 'status': 200}
+    return {'message': f'CSV file ({filename}) generated successfully',"filename":filename, 'status': 200}
 
-def download_report(report_url,encryptionDetails):
+# Function to download a report
+def download_report(report_url, encryptionDetails):
     try:
-        fileContent = get_report_document_content(encryptionDetails['key'],encryptionDetails["initializationVector"],report_url)
+        fileContent = get_report_document_content(encryptionDetails['key'], encryptionDetails["initializationVector"], report_url)
         return fileContent
 
     except Exception as e:
+        # Handle errors during report download
         print('Error downloading report:', str(e))
-        return {'error': f'Request failed: {str(e)}', 'status':500}
-    
+        return {'error': f'Request failed: {str(e)}', 'status': 500}
+
+def read_csv_and_process_report(current_report_data, filename):
+    try:
+
+        summaryData = DownloadedReport(report_id=current_report_data['reportId'],
+                                       report_start_time=datetime.fromisoformat(current_report_data['dataStartTime']).strftime('%Y-%m-%d'),
+                                       report_end_time=datetime.fromisoformat(current_report_data['dataEndTime']).strftime('%Y-%m-%d'))
+        summaryData.save()
+
+        csv_file_path = os.path.join(BASE_DIR,filename)
+
+        with open(csv_file_path, 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+        
+            # Skip header rows
+            for _ in range(8):
+                next(csv_reader)
+
+            date_format = "%d %b %Y %I:%M:%S %p"
+
+            for i,read_row in enumerate(csv_reader):
+                payment_type = read_row[2]
+                order_id = read_row[3]
+                sku = read_row[4]
+
+                # Try to get an existing record based on order_id, sku, and type
+                # existing_record = PaymentTransactionDetail.objects.filter(
+                #     order_id=order_id, sku=sku, type=payment_type
+                # ).first()
+                
+                # Continue with processing the CSV rows
+                date_string = read_row[0].replace(' GMT+9', '')
+                parsed_date = datetime.strptime(date_string, date_format)
+                timezone_offset = timezone(timedelta(hours=9))  # GMT+9
+                parsed_date = parsed_date.replace(tzinfo=timezone_offset)
+                read_row[21] = read_row[21].replace(',', '')
+                read_row[22] = read_row[22].replace(',', '')
+                
+                # if existing_record:
+                #     # If the record exists, update its fields
+                #     existing_record.date_time = parsed_date
+                #     existing_record.settlement_id = read_row[1]
+                #     existing_record.description = read_row[5]
+                #     existing_record.quantity=0 if read_row[6] == '' else read_row[6],
+                #     existing_record.marketplace = read_row[7]
+                #     existing_record.fulfillment = read_row[8]
+                #     existing_record.order_city = read_row[9]
+                #     existing_record.order_state = read_row[10]
+                #     existing_record.order_postal = read_row[11]
+                #     existing_record.product_sales = Decimal(read_row[12])
+                #     existing_record.shipping_credits = Decimal(read_row[13])
+                #     existing_record.gift_wrap_credits = Decimal(read_row[14])
+                #     existing_record.promotional_rebates = Decimal(read_row[15])
+                #     existing_record.sales_tax_collected = Decimal(read_row[16])
+                #     existing_record.low_value_goods = Decimal(read_row[17])
+                #     existing_record.selling_fees = Decimal(read_row[18])
+                #     existing_record.fba_fees = Decimal(read_row[19])
+                #     existing_record.other_transaction_fees = Decimal(read_row[20])
+                #     existing_record.other = Decimal(read_row[21])
+                #     existing_record.total = Decimal(read_row[22])
+
+                #     # Save the changes
+                #     existing_record.save()
+                # else:
+                # If the record doesn't exist, create a new one
+                new_record = PaymentTransactionDetail(
+                    date_time=parsed_date,
+                    settlement_id=read_row[1],
+                    type=payment_type,
+                    order_id=order_id,
+                    sku=sku,
+                    description=read_row[5],
+                    quantity=0 if read_row[6] == '' else read_row[6],
+                    marketplace=read_row[7],
+                    fulfillment=read_row[8],
+                    order_city=read_row[9],
+                    order_state=read_row[10],
+                    order_postal=read_row[11],
+                    product_sales=Decimal(read_row[12]),
+                    shipping_credits=Decimal(read_row[13]),
+                    gift_wrap_credits=Decimal(read_row[14]),
+                    promotional_rebates=Decimal(read_row[15]),
+                    sales_tax_collected=Decimal(read_row[16]),
+                    low_value_goods=Decimal(read_row[17]),
+                    selling_fees=Decimal(read_row[18]),
+                    fba_fees=Decimal(read_row[19]),
+                    other_transaction_fees=Decimal(read_row[20]),
+                    other=Decimal(read_row[21]),
+                    total=Decimal(read_row[22]),
+                    downloaded_file_id=summaryData
+                )
+
+                # Save the new record
+                new_record.save()    
+
+        # return JsonResponse({"row_data":json.dumps(new_array, indent=2)}, status=200)
+        return JsonResponse({"row_data":new_record}, status=200)
+        
+
+    except Exception as e:
+        # Handle request exceptions, such as network errors
+        return JsonResponse({'error': f'Request failed: {str(e)}'}, status=500)
+
 def generate_rpt_using_sdk(request):
     try:
 
-        report_types = ["GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE_V2"]
+        report_types = ["GET_DATE_RANGE_FINANCIAL_TRANSACTION_DATA"]
         report_response =Reports(credentials=credentials,marketplace=Marketplaces.IN).get_reports(reportTypes=report_types)
         report_response=report_response.payload['reports']
         # return JsonResponse(report_response, status=200,safe=False)
 
         report_document_id=report_response[0]['reportDocumentId']
-        document_response =Reports(credentials=credentials,marketplace=Marketplaces.IN).get_report_document(report_document_id, download=True, file='GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE_V2.csv')
+        document_response =Reports(credentials=credentials,marketplace=Marketplaces.IN).get_report_document(report_document_id, download=True, file='GET_DATE_RANGE_FINANCIAL_TRANSACTION_DATA.csv')
         return JsonResponse(document_response.payload, status=200,safe=False)
 
     except SellingApiException as ex:
         # Handle request exceptions, such as network errors
         return JsonResponse({'error': f'Request failed: {str(ex)}'}, status=500)
-    
-def read_csv_and_process_report(request):
-    try:
-        csv_file_path = os.path.join(BASE_DIR,'transaction_report_20240101133722.csv')
-        processed_data_list = []
-
-        with open(csv_file_path, 'r') as csv_file:
-            csv_reader = csv.reader(csv_file)
-        
-            #header skip
-            next(csv_reader)
-            date_format = "%d.%m.%Y %H:%M:%S UTC"
-            first_row = next(csv_file).rstrip('\n').split('\t')
-
-            if first_row:
-                settlement_id, start_date, end_date, deposit_date, total_amount, currency = first_row[:6]
-               
-                settlement_start_date = timezone.make_aware(datetime.strptime(start_date, date_format))
-                settlement_end_date = timezone.make_aware(datetime.strptime(end_date, date_format))
-                deposite_date = timezone.make_aware(datetime.strptime(deposit_date, date_format))
-                # processed_data = {
-                #     "settlement_id": settlement_id,
-                #     "settlement_start_date": datetime.strptime(start_date, date_format),
-                #     "settlement_end_date": datetime.strptime(end_date, date_format),
-                #     "deposite_date": datetime.strptime(deposit_date, date_format),
-                #     "total_amount": total_amount,
-                #     "total_amount": currency
-                # }
-                # summaryData = DownloadedReport(settlement_id = settlement_id ,\
-                #                                            settlement_start_date=settlement_start_date,\
-                #                                             settlement_end_date=settlement_end_date,\
-                #                                             deposit_date=deposite_date,\
-                #                                           total_amount = total_amount ,\
-                #                                           currency = currency)
-                # print(summaryData)
-                # summaryData.save()
-            for row in csv_reader:
-                newRow = row[0].rstrip('\n').split('\t')
-                temp_obj = {
-                    "settlement-id": newRow[0],
-                    "settlement-start-date": newRow[1],
-                    "settlement-end-date": newRow[2],
-                    "deposit-date": newRow[3],
-                    "total-amount": newRow[4],
-                    "currency": newRow[5],
-                    "transaction-type": newRow[6],
-                    "order-id": newRow[7],
-                    "merchant-order-id": newRow[8],
-                    "adjustment-id": newRow[9],
-                    "shipment-id": newRow[10],
-                    "marketplace-name": newRow[11],
-                    "amount-type": newRow[12],
-                    "amount-description": newRow[13],
-                    "amount": newRow[14],
-                    "fulfillment-id": newRow[15],
-                    "posted-date": newRow[16],
-                    "posted-date-time": newRow[17],
-                    "order-item-code": newRow[18],
-                    "merchant-order-item-id": newRow[19],
-                    "merchant-adjustment-item-id": newRow[20],
-                    "sku": newRow[21],
-                    "quantity-purchased": newRow[22],
-                    "promotion-id": newRow[23]
-                }
-                processed_data_list.append(temp_obj)
-        
-
-            grouped_data = {}
-            for item in processed_data_list:
-                order_id = item["order-id"]
-                if order_id not in grouped_data:
-                    grouped_data[order_id] = {"order_items": []}
-                grouped_data[order_id]["order_items"].append({
-                    "order_number": item['order-id'],
-                    "order_item_id": item['order-item-code'],
-                    "sku": item['sku'],
-                    "amount-description": item['amount-description'],
-                    "amount": item['amount'],
-                })
-
-            # for order_number, order_data in data.items():
-            #     order = Order.objects.create(order_number=order_number)
-
-            #     for item_data in order_data["order_items"]:
-            #         OrderItem.objects.create(
-            #             order=order,
-            #             order_item_id=item_data["order_item_id"],
-            #             sku=item_data["sku"],
-            #             price=Decimal(item_data["price"]),
-            #             tax_amount=Decimal(item_data["tax_amount"]),
-            #             igst_amount=Decimal(item_data["igst_amount"]),
-            #             tds_amount=Decimal(item_data["tds_amount"]),
-            #             commission=Decimal(item_data["commission"]),
-            #             commission_igst=Decimal(item_data["commission_igst"]),
-            #             fix_closing_fee=Decimal(item_data["fix_closing_fee"]),
-            #             fix_closing_fee_igst=Decimal(item_data["fix_closing_fee_igst"]),
-            #         )
-
-
-
-        return JsonResponse({"row_data":grouped_data}, status=200)
-        
-
-    except SellingApiException as ex:
-        # Handle request exceptions, such as network errors
-        return JsonResponse({'error': f'Request failed: {str(ex)}'}, status=500)
+   
