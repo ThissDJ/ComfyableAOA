@@ -1,3 +1,4 @@
+from tarfile import ExtractError
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import redirect
@@ -2559,7 +2560,7 @@ def scrape(url):
     f = open(os.path.join(BASE_DIR,'amazon_response.html'), "w")
     f.write(r.text)
     f.close()
-    data = extractor.extract(r.text,base_url=url)
+    data = ExtractError.extract(r.text,base_url=url)
     reviews = []
     for r in data['reviews']:
         r["product"] = data["product_title"]

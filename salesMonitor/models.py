@@ -582,3 +582,41 @@ class SkuProductionStageTypeParameter(models.Model):
 
     def __str__(self):
         return '%s %s' %(self.sku, self.production_type_name)
+
+class DownloadedReport(models.Model):
+    created_at = models.DateField(null=False, auto_now_add=True, blank=False)
+    updated_at = models.DateField(null=False, auto_now=True, blank=False)
+    report_id = models.CharField(max_length=10)
+    report_start_time = models.DateField(null=False, blank=False)
+    report_end_time = models.DateField(null=False, blank=False)
+
+class PaymentTransactionDetail(models.Model):
+    created_at = models.DateField(null=False, auto_now_add=True, blank=False)
+    updated_at = models.DateField(null=False, auto_now_add=True,blank=False)
+    downloaded_file_id = models.ForeignKey(DownloadedReport, on_delete=models.CASCADE)
+    date_time = models.DateTimeField(null=False, blank=False)
+    settlement_id = models.CharField(max_length=20)
+    type = models.CharField(max_length=30)
+    order_id = models.CharField(max_length=20)
+    sku = models.CharField(max_length=20)
+    description=models.CharField(max_length=500)
+    quantity = models.IntegerField(default=0)
+    marketplace = models.CharField(max_length=20)
+    fulfillment = models.CharField(max_length=20)
+    order_city = models.CharField(max_length=20)
+    order_state = models.CharField(max_length=20)
+    order_postal = models.CharField(max_length=20)
+    product_sales = models.FloatField(default=0)
+    shipping_credits = models.FloatField(default=0)
+    gift_wrap_credits = models.FloatField(default=0)
+    promotional_rebates = models.FloatField(default=0)
+    sales_tax_collected = models.FloatField(default=0)
+    low_value_goods = models.FloatField(default=0)
+    selling_fees = models.FloatField(default=0)
+    fba_fees = models.FloatField(default=0)
+    other_transaction_fees = models.FloatField(default=0)
+    other = models.FloatField(default=0)
+    total = models.FloatField(default=0)
+
+    def save_to_database(self):
+        self.save()

@@ -18,4 +18,10 @@ def main():
 
 
 if __name__ == '__main__':
+    import subprocess
+
+    #Run your additional script
+    print("Running preflight scripts...")
+    subprocess.Popen(['python', './cron.py'])
+    
     main()
