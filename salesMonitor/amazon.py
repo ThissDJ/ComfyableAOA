@@ -86,7 +86,7 @@ def generate_transaction_report(request):
     headers = {'x-amz-access-token': accessToken}
 
     # Replace 'https://api.example.com/endpoint' with the actual API endpoint URL
-    api_url = 'https://sellingpartnerapi-fe.amazon.com/reports/2020-09-04/reports?reportTypes=GET_DATE_RANGE_FINANCIAL_TRANSACTION_DATA&marketplaceIds=A39IBJ37TRP1C6'
+    api_url = 'https://sellingpartnerapi-fe.amazon.com/reports/2021-06-30/reports?reportTypes=GET_DATE_RANGE_FINANCIAL_TRANSACTION_DATA&marketplaceIds=A39IBJ37TRP1C6'
 
     try:
 
@@ -96,10 +96,10 @@ def generate_transaction_report(request):
         if response.status_code == 200:
             # Parse the JSON response
             report_response = response.json()
-            if len(report_response['payload']) <0:
+            if len(report_response['reports']) <0:
                 return {'error': "Report not found"}
             else:
-                current_report_data= report_response['payload'][0]
+                current_report_data= report_response['reports'][0]
                 # Check if a record with the same report_id already exists
                 existing_report = DownloadedReport.objects.filter(report_id=current_report_data['reportId']).first()
                 
@@ -107,9 +107,9 @@ def generate_transaction_report(request):
                     print(f"Report with report_id '{current_report_data['reportId']}' already exists in the database.")
                     return JsonResponse({"message":f"Report with report_id '{current_report_data['reportId']}' already exists in the database."}, status=403) 
                 
-                document_data= get_report_document(report_response['payload'][0]['reportDocumentId'])
+                document_data= get_report_document(report_response['reports'][0]['reportDocumentId'])
                 if document_data['status'] == 200:
-                    download_report_response = download_report(document_data['data']['url'], document_data['data']["encryptionDetails"])
+                    download_report_response = download_report(document_data['data']['url'])
                     # Check if download_report_response is not None before accessing its attributes
                     if download_report_response is not None:
                         read_csv_and_process_report(current_report_data, download_report_response.get('filename', ''))
@@ -138,7 +138,7 @@ def get_report_document(reportDocumentId):
         'x-amz-access-token': accessToken,
     }
 
-    api_url = 'https://sellingpartnerapi-fe.amazon.com/reports/2020-09-04/documents/' + reportDocumentId
+    api_url = 'https://sellingpartnerapi-fe.amazon.com/reports/2021-06-30/documents/' + reportDocumentId
 
     try:
         # Make a GET request to the API
@@ -148,7 +148,7 @@ def get_report_document(reportDocumentId):
         if response.status_code == 200:
             # Parse the JSON response
             report_response = response.json()
-            return {"data": report_response['payload'], 'status': 200}
+            return {"data": report_response, 'status': 200}
         else:
             # If the request was not successful, return an error response
             return {"data": response.json(), "status": response.status_code}
@@ -167,23 +167,9 @@ def ase_cbc_decryptor(key, iv, encryption):
     return unpaded_text + unpadder.finalize()
 
     
-def get_report_document_content(key, iv, url, compression_type=None):
+def get_report_document_content(url, compression_type=None):
     resp = requests.get(url=url)
     resp_content = resp.content
-
-    decrypted_content = ase_cbc_decryptor(key=key, iv=iv, encryption=resp_content)
-
-    if compression_type == 'GZIP':
-        decrypted_content = gzip.decompress(decrypted_content)
-
-    # Assuming the decrypted content is in CSV format
-    decoded_content = decrypted_content.decode('utf-8')
-    
-    # Assuming CSV content is comma-separated, adjust accordingly based on your actual data
-    csv_reader = csv.reader(decoded_content.splitlines())
-    
-    # Assuming the first row contains column headers, adjust accordingly
-    headers = next(csv_reader)
 
     # Generate timestamp for the filename
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -191,19 +177,15 @@ def get_report_document_content(key, iv, url, compression_type=None):
     # Create a CSV file with a timestamp in the name
     filename = f'transaction_report_{timestamp}.csv'
     csv_file_path= os.path.join(BASE_DIR,filename)
-    with open(csv_file_path, 'w', newline='') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerow(headers)
-
-        # Write the remaining rows
-        csv_writer.writerows(csv_reader)
+    with open(csv_file_path, 'wb') as output_file:
+        output_file.write(resp_content)
 
     return {'message': f'CSV file ({filename}) generated successfully',"filename":filename, 'status': 200}
 
 # Function to download a report
-def download_report(report_url, encryptionDetails):
+def download_report(report_url):
     try:
-        fileContent = get_report_document_content(encryptionDetails['key'], encryptionDetails["initializationVector"], report_url)
+        fileContent = get_report_document_content(report_url)
         return fileContent
 
     except Exception as e:
