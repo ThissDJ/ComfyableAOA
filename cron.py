@@ -4,9 +4,8 @@ import time
 
 def job():
 
-    execution_time = time.strftime("%Y-%m-%d %H:%M:%S")
     current_time = time.strftime("%Y-%m-%d %H:%M:%S")
-    print(f"Job executed at {execution_time}, Hello at {current_time}")
+    print(f"Job executed at {current_time}")
 
     # Make an HTTP GET request to the specified URL
     url = 'http://localhost:8000/salesMonitor/generate_transaction_report'
@@ -20,7 +19,9 @@ def job():
 
 # Schedule the job to run every 2 hours
 schedule.every(2).hours.do(job)
+# schedule.every(1).minutes.do(job)
 
 while True:
     schedule.run_pending()
     time.sleep(2 * 3600)  # Sleep for the scheduled interval of 2 hours
+    # time.sleep(1 * 60)  # Sleep for the scheduled interval of 2 hours
