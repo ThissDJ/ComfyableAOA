@@ -1,3 +1,8 @@
+"""
+运行方式
+`python manage.py runscript daily_product_sales_and_inventory`
+"""
+
 import os
 import pytz
 from dotenv import load_dotenv
