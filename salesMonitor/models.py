@@ -1,15 +1,19 @@
+import datetime
+import math
 from django.db import models
 from django.db.models import Sum
 from PIL import Image
 from django.contrib.auth.models import User
-import datetime, math
 from PIL import ImageFile
+
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+
 
 class DailySalesLastYear(models.Model):
     day = models.IntegerField(default=1)
     month = models.IntegerField(default=1)
     sales = models.FloatField()
+
 
 class HistoryTodaySales(models.Model):
     date = models.DateField(null=False, blank=False)
@@ -22,13 +26,15 @@ class HistoryTodaySales(models.Model):
     ad_cost_on_sales = models.FloatField()
     country = models.CharField(max_length=2,default='US')
 
+
 class Product(models.Model):
     sku = models.CharField(max_length=30)
     new = models.BooleanField(default=False)
     discontinued = models.BooleanField(default=False)
-    name_in_chinese  = models.CharField(max_length = 150, default="")
-    transparency  = models.BooleanField(default=False)
-    image = models.ImageField(upload_to='productimage',
+    name_in_chinese = models.CharField(max_length=150, default="")
+    transparency = models.BooleanField(default=False)
+    image = models.ImageField(
+        upload_to='productimage',
         null=True,
         blank=True,
         editable=True,
@@ -57,18 +63,19 @@ class Product(models.Model):
             new_width = min([100, width])
             new_height = new_width / width_height_ratio
         else:
-            new_height = min([100,height])
+            new_height = min([100, height])
             new_width = new_height * width_height_ratio
-        size = ( int(new_width), int(new_height))
+        size = (int(new_width), int(new_height))
         image = image.resize(size, Image.ANTIALIAS)
         image.save(self.image.path)
 
     def __str__(self):
-         return self.sku
+        return self.sku
+
 
 class FbaInventory(models.Model):
     sku = models.CharField(max_length=30, unique=False)
-    fnsku = models.CharField(max_length=30, unique=False, default ='nofnsku')
+    fnsku = models.CharField(max_length=30, unique=False, default='nofnsku')
     asin = models.CharField(max_length=30)
     total_unit = models.IntegerField(default=0)
     available = models.IntegerField(default=0)
@@ -77,17 +84,20 @@ class FbaInventory(models.Model):
     inbound_unit = models.IntegerField(default=0)
     days_of_supply = models.IntegerField(default=0)
     recommended_replenishment_qty = models.IntegerField(default=0)
-    recommended_ship_date = models.CharField(default="",max_length=15)
-    country = models.CharField(max_length=2,default='US')
+    recommended_ship_date = models.CharField(default="", max_length=15)
+    country = models.CharField(max_length=2, default='US')
 
     def __str__(self):
-         return '%s : %i: %i: %i' %(self.sku, self.available, self.fc_unit, self.inbound_unit)
+        return '%s : %i: %i: %i' % (self.sku, self.available, self.fc_unit, self.inbound_unit)
+
 
 class RemoteFulfillmentSku(models.Model):
     sku = models.CharField(max_length=30, unique=False)
-    country = models.CharField(max_length=2,default='CA')
+    country = models.CharField(max_length=2, default='CA')
+
     def __str__(self):
-         return '%s : %s' %(self.sku, self.country)
+        return '%s : %s' % (self.sku, self.country)
+
 
 class TodayProductSales(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -95,12 +105,12 @@ class TodayProductSales(models.Model):
     sales_amount = models.FloatField(default=0)
     sold_qty_average_7d = models.FloatField(default=0)
     average_price_7d = models.FloatField(default=0)
-    fba_inventory = models.ForeignKey(FbaInventory, on_delete=models.CASCADE,null=1)
+    fba_inventory = models.ForeignKey(FbaInventory, on_delete=models.CASCADE, null=1)
     lasting_day_estimated_by_us = models.FloatField(default=0)
     lasting_day_of_available_estimated_by_us = models.FloatField(default=0)
     lasting_day_of_available_fc_estimated_by_us = models.FloatField(default=0)
     lasting_day_of_total_fba_unit_estimated_by_us = models.FloatField(default=0)
-    country = models.CharField(max_length=2,default='US')
+    country = models.CharField(max_length=2, default='US')
 
     def save(self, *args, **kwargs):
         if self.fba_inventory is not None:
@@ -118,7 +128,8 @@ class TodayProductSales(models.Model):
             super(TodayProductSales, self).save(*args, **kwargs)
 
     def __str__(self):
-         return self.product.sku
+        return self.product.sku
+
 
 class Last7dayProductSales(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -126,22 +137,25 @@ class Last7dayProductSales(models.Model):
     sales_amount = models.FloatField()
     sold_qty_average_7d = models.FloatField()
     average_price_7d = models.FloatField()
-    country = models.CharField(max_length=2,default='US')
+    country = models.CharField(max_length=2, default='US')
+
 
 class ReceivablePurchasedQty(models.Model):
     sku = models.CharField(max_length=30, unique=True)
     qty = models.IntegerField(default=0)
 
     def __str__(self):
-         return '%s : %i' %(self.sku, self.qty)
+        return '%s : %i' % (self.sku, self.qty)
+
 
 class NearestReceivablePurchasedQty(models.Model):
     sku = models.CharField(max_length=30, unique=True)
     qty = models.IntegerField(default=0)
-    date = models.DateField(null = True)
+    date = models.DateField(null=True)
 
     def __str__(self):
-         return '%s : %i' %(self.sku, self.qty)
+        return '%s : %i' % (self.sku, self.qty)
+
 
 class HistoryLast7dayProductSales(models.Model):
     date = models.DateField()
@@ -150,7 +164,8 @@ class HistoryLast7dayProductSales(models.Model):
     sales_amount = models.FloatField()
     sold_qty_average_7d = models.FloatField()
     average_price_7d = models.FloatField()
-    country = models.CharField(max_length=2,default='US')
+    country = models.CharField(max_length=2, default='US')
+
 
 class HistoryTodayProductSales(models.Model):
     date = models.DateField(null=False, blank=False)
@@ -159,12 +174,12 @@ class HistoryTodayProductSales(models.Model):
     sales_amount = models.FloatField(default=0)
     sold_qty_average_7d = models.FloatField(default=0)
     average_price_7d = models.FloatField(default=0)
-    fba_inventory = models.ForeignKey(FbaInventory, on_delete=models.CASCADE,null=1)
+    fba_inventory = models.ForeignKey(FbaInventory, on_delete=models.CASCADE, null=1)
     lasting_day_estimated_by_us = models.FloatField(default=0)
     lasting_day_of_available_estimated_by_us = models.FloatField(default=0)
     lasting_day_of_available_fc_estimated_by_us = models.FloatField(default=0)
     lasting_day_of_total_fba_unit_estimated_by_us = models.FloatField(default=0)
-    country = models.CharField(max_length=2,default='US')
+    country = models.CharField(max_length=2, default='US')
 
     def save(self, *args, **kwargs):
         if self.fba_inventory is not None:
@@ -180,7 +195,8 @@ class HistoryTodayProductSales(models.Model):
             super(HistoryTodayProductSales, self).save(*args, **kwargs)
 
     def __str__(self):
-         return self.product.sku
+        return self.product.sku
+
 
 class CurrencyRate(models.Model):
     from_country = models.CharField(max_length=2, unique=False)
@@ -188,31 +204,36 @@ class CurrencyRate(models.Model):
     rate = models.FloatField(default=0)
     date = models.DateField(null=False, blank=False, default=datetime.date.today)
 
+
 class ShippedSkuQty(models.Model):
     product = models.ForeignKey(Product, on_delete=models.DO_NOTHING)
-    sku = models.CharField(max_length=30, unique=False,default="")
+    sku = models.CharField(max_length=30, unique=False, default="")
     qty = models.IntegerField(default=0)
-    shipped_date = models.DateField(null = True)
-    estimated_receiving_date = models.DateField(null = True)
+    shipped_date = models.DateField(null=True)
+    estimated_receiving_date = models.DateField(null=True)
+
     def __str__(self):
-         return '%s : %i' %(self.sku, self.qty)
+        return '%s : %i' % (self.sku, self.qty)
+
 
 class FulfillmentCenterCodeCountry(models.Model):
     code = models.CharField(max_length=15, unique=True)
-    country = models.CharField(max_length=2,default='US')
+    country = models.CharField(max_length=2, default='US')
+
 
 class FbaShipment(models.Model):
     shipment_id = models.CharField(max_length=15, unique=True)
     shipment_name = models.CharField(max_length=50, unique=True)
-    country = models.CharField(max_length=2, unique=False,default="US")
+    country = models.CharField(max_length=2, unique=False, default="US")
     fc_code = models.CharField(max_length=15, default="")
     shipped_sku_qties = models.ManyToManyField(ShippedSkuQty)
-    shipped_date = models.DateField(null = True)
-    estimated_receiving_date = models.DateField(null = True)
-
+    shipped_date = models.DateField(null=True)
+    estimated_receiving_date = models.DateField(null=True)
     closed = models.BooleanField(default=False)
+
     def __str__(self):
-         return '%s' %(self.shipment_id)
+        return '%s' % (self.shipment_id)
+
 
 class FbaShipmentPaidBill(models.Model):
     shipment_id = models.CharField(max_length=15, unique=True)
@@ -221,74 +242,87 @@ class FbaShipmentPaidBill(models.Model):
     weight_volumn_factor = models.IntegerField(default=6000)
 
     def __str__(self):
-         return '%s' %(self.shipment_id)
+        return '%s' % (self.shipment_id)
+
 
 class ProductInventoryUnitValue(models.Model):
-    sku = models.CharField(max_length=30, unique=False,default="")
+    sku = models.CharField(max_length=30, unique=False, default="")
     inventory_value = models.FloatField(default=0)
-    date = models.DateField(null = True)
+    date = models.DateField(null=True)
     additional_cost = models.FloatField(default=0)
 
     def __str__(self):
-         return '%s: %.1f' %(self.sku, self.inventory_value)
+        return '%s: %.1f' % (self.sku, self.inventory_value)
+
     def inventory_value_plus_additional_cost(self):
         return self.inventory_value + self.additional_cost
 
+
 class ReceivedSkuQty(models.Model):
     shipment_id = models.CharField(max_length=15, unique=False)
-    sku = models.CharField(max_length=30, unique=False,default="")
+    sku = models.CharField(max_length=30, unique=False, default="")
     qty = models.IntegerField(default=0)
 
     def __str__(self):
-         return '%s : %i : %s' %(self.sku, self.qty, self.shipment_id)
+        return '%s : %i : %s' % (self.sku, self.qty, self.shipment_id)
+
 
 class Inventory(models.Model):
     warehouse_name = models.CharField(max_length=15, unique=False)
-    sku = models.CharField(max_length=30, unique=False,default="")
+    sku = models.CharField(max_length=30, unique=False, default="")
     qty = models.IntegerField(default=0)
 
     def __str__(self):
-         return '%s : %i' %(self.sku, self.qty)
+        return '%s : %i' % (self.sku, self.qty)
+
 
 class Upc(models.Model):
-    upc = models.CharField(max_length=30, unique=True,default="")
+    upc = models.CharField(max_length=30, unique=True, default="")
     used = models.BooleanField(default=False)
 
+
 class SkuUpc(models.Model):
-    sku = models.CharField(max_length=30, unique=False,default="")
-    upc = models.ForeignKey(Upc, on_delete=models.DO_NOTHING,null=True)
+    sku = models.CharField(max_length=30, unique=False, default="")
+    upc = models.ForeignKey(Upc, on_delete=models.DO_NOTHING, null=True)
 
     def __str__(self):
         if self.upc:
-            return '%s : %s' %(self.sku, self.upc.upc)
+            return '%s : %s' % (self.sku, self.upc.upc)
         else:
-            return '%s' %(self.sku)
+            return '%s' % (self.sku)
+
 
 class Supplier(models.Model):
-    name = models.CharField(max_length=60, unique=False,default="")
+    name = models.CharField(max_length=60, unique=False, default="")
+
     def __str__(self):
         return self.name
 
+
 class UserSupplier(models.Model):
-    user = models.ForeignKey(User, on_delete=models.DO_NOTHING,null=True)
-    supplier_id = models.CharField(max_length=60, unique=False,default="GYS001")
+    user = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=True)
+    supplier_id = models.CharField(max_length=60, unique=False, default="GYS001")
+
     def __str__(self):
-        return '%s : %s' %(self.user.username, self.supplier_id)
+        return '%s : %s' % (self.user.username, self.supplier_id)
+
 
 class SkuSupplier(models.Model):
-    sku = models.CharField(max_length=30, unique=False,default="")
-    supplier_id = models.CharField(max_length=60, unique=False,default="GYS001")
+    sku = models.CharField(max_length=30, unique=False, default="")
+    supplier_id = models.CharField(max_length=60, unique=False, default="GYS001")
 
     def __str__(self):
-        return '%s : %s' %(self.sku, self.supplier_id)
+        return '%s : %s' % (self.sku, self.supplier_id)
+
 
 class SkuPurchasingPrice(models.Model):
-    sku = models.CharField(max_length=30, unique=False,default="")
+    sku = models.CharField(max_length=30, unique=False, default="")
     purchasing_price = models.FloatField()
     date = models.DateField(null=False, blank=False)
 
     def __str__(self):
-        return '%s : ¥%s, %s' %(self.sku, self.purchasing_price, self.date.strftime('%Y-%m-%d'))
+        return '%s : ¥%s, %s' % (self.sku, self.purchasing_price, self.date.strftime('%Y-%m-%d'))
+
 
 class SkuHeadShippingUnitCost(models.Model):
     TYPES = (
@@ -296,17 +330,18 @@ class SkuHeadShippingUnitCost(models.Model):
         ('A', 'Air'),
         ('G', 'General'),
     )
-    sku = models.CharField(max_length=30, unique=False,default="")
+    sku = models.CharField(max_length=30, unique=False, default="")
     type = models.CharField(max_length=1, choices=TYPES)
     country = models.CharField(max_length=2)
     head_shipping_unit_cost = models.FloatField()
     date = models.DateField(null=False, blank=False)
 
     def __str__(self):
-        return '%s : ¥%s,%s,%s' %(self.sku, self.head_shipping_unit_cost, self.country, self.date.strftime('%Y-%m-%d'))
+        return '%s : ¥%s,%s,%s' % (self.sku, self.head_shipping_unit_cost, self.country, self.date.strftime('%Y-%m-%d'))
+
 
 class SkuAssetLiabilityTable(models.Model):
-    sku = models.CharField(max_length=30, unique=False,default="")
+    sku = models.CharField(max_length=30, unique=False, default="")
     for_sales = models.BooleanField(default=False)
     liabilities = models.FloatField(default=0.0)
     date = models.DateField(null=False, blank=False)
@@ -323,21 +358,25 @@ class SkuAssetLiabilityTable(models.Model):
     net_asset_amount = models.FloatField(default=0.0)
     previous_asset_liability_table_id = models.IntegerField(default=0)
 
+
 class SkuManagedBySalesPerson(models.Model):
-    sku = models.CharField(max_length=30, unique=False,default="")
-    sales_person_name = models.CharField(max_length=30, unique=False,default="")
-    sales_assistant_name = models.CharField(max_length=30, unique=False,default="lijunjie")
+    sku = models.CharField(max_length=30, unique=False, default="")
+    sales_person_name = models.CharField(max_length=30, unique=False, default="")
+    sales_assistant_name = models.CharField(max_length=30, unique=False, default="lijunjie")
+
 
 class SkuContributor(models.Model):
-    sku = models.CharField(max_length=30, unique=False,default="")
-    proposer_name = models.CharField(max_length=30, unique=False,default="lijunjie")
-    designer_name = models.CharField(max_length=30, unique=False,default="lijunjie")
+    sku = models.CharField(max_length=30, unique=False, default="")
+    proposer_name = models.CharField(max_length=30, unique=False, default="lijunjie")
+    designer_name = models.CharField(max_length=30, unique=False, default="lijunjie")
+
 
 class SkuWeight(models.Model):
-    sku = models.CharField(max_length=30, unique=False,default="")
+    sku = models.CharField(max_length=30, unique=False, default="")
     heavy_or_light = models.BooleanField(default=False)
     real_weight = models.FloatField(default=0.25)
     converted_weight = models.FloatField(default=0.3)
+
 
 class FbaShipmentCost(models.Model):
     SHIPWAYS = (
@@ -350,15 +389,18 @@ class FbaShipmentCost(models.Model):
     cost_per_kg = models.FloatField(default=45.0)
     date = models.DateField(null=False, blank=False)
 
+
 class SkuPurchaseOrder(models.Model):
-    sku = models.CharField(max_length=30, unique=False,default="")
-    po_number = models.CharField(max_length=30, unique=False ,default="")
+    sku = models.CharField(max_length=30, unique=False, default="")
+    po_number = models.CharField(max_length=30, unique=False, default="")
     qty = models.IntegerField(default=0)
     transaction_amount = models.FloatField(default=0.0)
     date = models.DateField(null=False, blank=False)
 
     def __str__(self):
-        return '%s : %s' %(self.sku, self.date.strftime('%Y-%m-%d'))
+        return '%s : %s' % (self.sku, self.date.strftime('%Y-%m-%d'))
+    
+
 class ProfitLossTable(models.Model):
     STATUS = (
         ('T', '交易订单录入'),
@@ -366,11 +408,9 @@ class ProfitLossTable(models.Model):
         ('F', '各种费用扣除'),
         ('S', '股东分红扣除'),
     )
-    COUNTRIES = (('US','US'), ('CA', 'CA'), ('AU', 'AU') \
-                    , ('AE', 'AE'), ('UK', 'UK') , ('DE', 'DE') \
-                    , ('FR', 'FR'), ('IT', 'IT'), ('ES', 'ES') \
-                    , ('SG','SG'))
-    sku = models.CharField(max_length=30, unique=False,default="")
+    COUNTRIES = (('US', 'US'), ('CA', 'CA'), ('AU', 'AU'), ('AE', 'AE'), ('UK', 'UK'),
+                 ('DE', 'DE'), ('FR', 'FR'), ('IT', 'IT'), ('ES', 'ES'), ('SG', 'SG'))
+    sku = models.CharField(max_length=30, unique=False, default="")
     status = models.CharField(max_length=1, choices=STATUS)
     start_date = models.DateField(null=False, blank=False)
     end_date = models.DateField(null=False, blank=False)
@@ -380,7 +420,7 @@ class ProfitLossTable(models.Model):
     head_shipping_fee = models.FloatField(default=0.0)
     amazon_fee = models.FloatField(default=0.0)
     ad_fee = models.FloatField(default=0.0)
-    sales_person = models.CharField(max_length=30, unique=False,default="lijunjie")
+    sales_person = models.CharField(max_length=30, unique=False, default="lijunjie")
     sales_person_bonus_fee = models.FloatField(default=0.0)
     sales_person_bonus_fee_percent = models.FloatField(default=0.05)
     product_originator_bonus_fee = models.FloatField(default=0.0)
@@ -391,13 +431,13 @@ class ProfitLossTable(models.Model):
     platform_fee_percent = models.FloatField(default=0.05)
     other_fee = models.FloatField(default=0.0)
     shareholder_bonus_fee = models.FloatField(default=0.0)
-    country = models.CharField(max_length=2, choices = COUNTRIES)
+    country = models.CharField(max_length=2, choices=COUNTRIES)
     currency_rate = models.FloatField(default=6.5)
     profit_before_deduct_bonus = models.FloatField(default=0.0)
     profit_after_deduct_bounus = models.FloatField(default=0.0)
 
     def __str__(self):
-        return '%s : %s : %s' %(self.sku, self.start_date.strftime('%Y-%m-%d'), self.end_date.strftime('%Y-%m-%d'))
+        return '%s : %s : %s' % (self.sku, self.start_date.strftime('%Y-%m-%d'), self.end_date.strftime('%Y-%m-%d'))
 
 
 class ProductionStage(models.Model):
@@ -411,10 +451,11 @@ class ProductionStage(models.Model):
     order_number = models.IntegerField(default=1)
 
     def __str__(self):
-        return '%i. %s' %(self.order_number, self.name)
+        return '%i. %s' % (self.order_number, self.name)
+
 
 class ProductionPlanProgress(models.Model):
-    production_plan_number = models.CharField(max_length=30, unique=True,default="")
+    production_plan_number = models.CharField(max_length=30, unique=True, default="")
     sku = models.CharField(max_length=30, default="")
     qty = models.IntegerField(default=0)
     manufacturer_number = models.CharField(max_length=40, default="")
@@ -427,11 +468,11 @@ class ProductionPlanProgress(models.Model):
     current_stage_name = models.CharField(max_length=30, default="")
 
     def __str__(self):
-        return  self.production_plan_number
+        return self.production_plan_number
 
     def save(self, *args, **kwargs):
-        if self.current_stage_id is not None and ProductionStage.objects.filter(id = self.current_stage_id).count():
-            self.current_stage_name = ProductionStage.objects.get(id = self.current_stage_id).name
+        if self.current_stage_id is not None and ProductionStage.objects.filter(id=self.current_stage_id).count():
+            self.current_stage_name = ProductionStage.objects.get(id=self.current_stage_id).name
         else:
             self.current_stage_name = ""
         if self.id is not None:
@@ -447,10 +488,10 @@ class ProductionPlanProgress(models.Model):
             if self.production_stages.count():
                 left_days = self.production_stages.aggregate(Sum('duration_days'))['duration_days__sum']
                 use_current_production_stage = True
-                if self.current_stage_id is not None and ProductionStage.objects.filter(id = self.current_stage_id).count():
-                    current_production_stage = ProductionStage.objects.get(id = self.current_stage_id)
+                if self.current_stage_id is not None and ProductionStage.objects.filter(id=self.current_stage_id).count():
+                    current_production_stage = ProductionStage.objects.get(id=self.current_stage_id)
                     # 判断是当前工序后序工序是否存在预计开始时间，如果有，则给予有预计开始时间的工序开始推断
-                    next_estimated_production_stage = self.production_stages.filter(order_number__gt = current_production_stage.order_number, start_date_estimated__isnull=False)
+                    next_estimated_production_stage = self.production_stages.filter(order_number__gt=current_production_stage.order_number, start_date_estimated__isnull=False)
                     if next_estimated_production_stage.count():
                         next_estimated_production_stage = next_estimated_production_stage.order_by('-order_number').first()
                         if next_estimated_production_stage.start_date_estimated > datetime.date.today():
@@ -471,13 +512,13 @@ class ProductionPlanProgress(models.Model):
 
     @property
     def is_a_parent_production_plan(self):
-        if (not self.subcontractor_name) and ProductionPlanProgress.objects.filter(production_plan_number__startswith = self.production_plan_number).count() > 1:
-                return True
+        if (not self.subcontractor_name) and ProductionPlanProgress.objects.filter(production_plan_number__startswith=self.production_plan_number).count() > 1:
+            return True
         return False
 
     @property
     def sewing_days(self):
-        sewing_step = self.production_stages.all().filter(name = '车缝')
+        sewing_step = self.production_stages.all().filter(name='车缝')
         if sewing_step.count():
             sewing_step = sewing_step.first()
             return sewing_step.duration_days
@@ -485,7 +526,7 @@ class ProductionPlanProgress(models.Model):
 
     @property
     def sewing_has_an_expected_date(self):
-        sewing_step = self.production_stages.all().filter(name = '车缝')
+        sewing_step = self.production_stages.all().filter(name='车缝')
         if sewing_step.count():
             sewing_step = sewing_step.first()
             if sewing_step.start_date_estimated:
@@ -494,7 +535,7 @@ class ProductionPlanProgress(models.Model):
 
     @property
     def sewing_expected_date(self):
-        sewing_step = self.production_stages.all().filter(name = '车缝')
+        sewing_step = self.production_stages.all().filter(name='车缝')
         if sewing_step.count():
             sewing_step = sewing_step.first()
             if sewing_step.start_date_estimated:
@@ -503,7 +544,7 @@ class ProductionPlanProgress(models.Model):
 
     @property
     def sewing_expected_date_fullcalendar(self):
-        sewing_step = self.production_stages.all().filter(name = '车缝')
+        sewing_step = self.production_stages.all().filter(name='车缝')
         if sewing_step.count():
             sewing_step = sewing_step.first()
             if sewing_step.start_date_estimated:
@@ -512,7 +553,7 @@ class ProductionPlanProgress(models.Model):
 
     @property
     def sewing_expected_end_date_fullcalendar(self):
-        sewing_step = self.production_stages.all().filter(name = '车缝')
+        sewing_step = self.production_stages.all().filter(name='车缝')
         if sewing_step.count():
             sewing_step = sewing_step.first()
             if sewing_step.start_date_estimated:
@@ -521,53 +562,56 @@ class ProductionPlanProgress(models.Model):
 
     @property
     def status_color_fullcalendar(self):
-        colorConfig = {'hasBoughtMaterial': \
-                             {'backgroundColor':'yellow', \
-                              'textColor':'black' \
-                            }, \
-                            'hasCutMaterial': \
-                                                 {'backgroundColor':'green', \
-                                                  'textColor':'white' \
-                                                }, \
-                            'hasStartedSewing': \
-                                                 {'backgroundColor':'pink', \
-                                                  'textColor':'purple' \
-                                                }, \
-                            'default': \
-                                                 {'backgroundColor':'blue', \
-                                                  'textColor':'white' \
-                                                }, \
-                }
+        colorConfig = {'hasBoughtMaterial':
+                       {'backgroundColor': 'yellow',
+                        'textColor': 'black'
+                        },
+                       'hasCutMaterial':
+                       {'backgroundColor': 'green',
+                        'textColor': 'white'
+                        },
+                       'hasStartedSewing':
+                       {'backgroundColor': 'pink',
+                        'textColor': 'purple'
+                        },
+                       'default':
+                       {'backgroundColor': 'blue',
+                        'textColor': 'white'
+                        },
+                       }
+        
         class FullcalendarEventColor:
             def __init__(self, backgroundColor, textColor):
                 self.backgroundColor = backgroundColor
                 self.textColor = textColor
-        material_purchase_step = self.production_stages.all().get(name = '买料')
-        material_cut_step = self.production_stages.all().get(name__startswith = '开料')
-        sewing_step = self.production_stages.all().get(name = '车缝')
+        material_purchase_step = self.production_stages.all().get(name='买料')
+        material_cut_step = self.production_stages.all().get(name__startswith='开料')
+        sewing_step = self.production_stages.all().get(name='车缝')
         if sewing_step.start_date_actually:
-            fullcalendarEventColor = FullcalendarEventColor( \
-                                                           backgroundColor = colorConfig['hasStartedSewing']['backgroundColor'], \
-                                                           textColor = colorConfig['hasStartedSewing']['textColor'] \
-                                                           )
+            fullcalendarEventColor = FullcalendarEventColor(
+                backgroundColor=colorConfig['hasStartedSewing']['backgroundColor'],
+                textColor=colorConfig['hasStartedSewing']['textColor']
+            )
             return fullcalendarEventColor
         elif material_cut_step.start_date_actually:
-            fullcalendarEventColor = FullcalendarEventColor( \
-                                                           backgroundColor = colorConfig['hasCutMaterial']['backgroundColor'], \
-                                                           textColor = colorConfig['hasCutMaterial']['textColor'] \
-                                                           )
+            fullcalendarEventColor = FullcalendarEventColor(
+                backgroundColor=colorConfig['hasCutMaterial']['backgroundColor'],
+                textColor=colorConfig['hasCutMaterial']['textColor']
+            )
             return fullcalendarEventColor
         elif material_purchase_step.start_date_actually:
-            fullcalendarEventColor = FullcalendarEventColor( \
-                                                           backgroundColor = colorConfig['hasBoughtMaterial']['backgroundColor'], \
-                                                           textColor = colorConfig['hasBoughtMaterial']['textColor'] \
-                                                           )
+            fullcalendarEventColor = FullcalendarEventColor(
+                backgroundColor=colorConfig['hasBoughtMaterial']['backgroundColor'],
+                textColor=colorConfig['hasBoughtMaterial']['textColor']
+            )
             return fullcalendarEventColor
-        fullcalendarEventColor = FullcalendarEventColor( \
-                                                       backgroundColor = colorConfig['default']['backgroundColor'], \
-                                                       textColor = colorConfig['default']['textColor'] \
-                                                       )
+        fullcalendarEventColor = FullcalendarEventColor(
+            backgroundColor=colorConfig['default']['backgroundColor'],
+            textColor=colorConfig['default']['textColor']
+        )
         return fullcalendarEventColor
+    
+
 class ProductionStageTypeParameter(models.Model):
     name = models.CharField(max_length=30, default="")
     production_stages = models.ManyToManyField(ProductionStage)
@@ -575,13 +619,15 @@ class ProductionStageTypeParameter(models.Model):
     def __str__(self):
         return self.name
 
+
 class SkuProductionStageTypeParameter(models.Model):
     production_type_name = models.CharField(max_length=30, default="")
     sku = models.CharField(max_length=30, default="")
     production_stages = models.ManyToManyField(ProductionStage)
 
     def __str__(self):
-        return '%s %s' %(self.sku, self.production_type_name)
+        return '%s %s' % (self.sku, self.production_type_name)
+
 
 class DownloadedReport(models.Model):
     created_at = models.DateField(null=False, auto_now_add=True, blank=False)
@@ -590,16 +636,17 @@ class DownloadedReport(models.Model):
     report_start_time = models.DateField(null=False, blank=False)
     report_end_time = models.DateField(null=False, blank=False)
 
+
 class PaymentTransactionDetail(models.Model):
     created_at = models.DateField(null=False, auto_now_add=True, blank=False)
-    updated_at = models.DateField(null=False, auto_now_add=True,blank=False)
+    updated_at = models.DateField(null=False, auto_now_add=True, blank=False)
     downloaded_file_id = models.ForeignKey(DownloadedReport, on_delete=models.CASCADE)
     date_time = models.DateTimeField(null=False, blank=False)
     settlement_id = models.CharField(max_length=20)
     type = models.CharField(max_length=30)
     order_id = models.CharField(max_length=20)
     sku = models.CharField(max_length=20)
-    description=models.CharField(max_length=500)
+    description = models.CharField(max_length=500)
     quantity = models.IntegerField(default=0)
     marketplace = models.CharField(max_length=20)
     fulfillment = models.CharField(max_length=20)
@@ -620,3 +667,29 @@ class PaymentTransactionDetail(models.Model):
 
     def save_to_database(self):
         self.save()
+
+
+# Cronjob update today and yesterday's data. update every 30 minutes. As long as the total inventory of a sku on that day is greater than 0, this sku has to be saved in this model, even the sold qty on that day is 0
+# Please combine all the European countries except for GB to be EU
+# Please set the default currency of EU to be EUR, for other none-european countries, set defualt currency of them as Amazon's default local currency, such as GB to be GBP
+# for some countries, such as AU, AE, SA, there might be not days_of_supply_by_amazon and recommended_replenishment_qty. For JP, EU and US, there should be these two values.
+class DailyProductSalesAndInventory(models.Model):
+    """日常产品销售和库存"""
+    sku = models.CharField(max_length=30, default="", name='商品的库存单位(SKU)，用于标识产品')
+    fnsku = models.CharField(max_length=30, unique=False, default='nofnsku', name='配送网络库存单位(FNSKU)，亚马逊的特定标识符')
+    sold_qty = models.IntegerField(default=0, name='已售出数量')
+    sales_amount = models.FloatField(default=0, name='销售金额')
+    sold_qty_average_7d = models.FloatField(default=0, name='近7天的平均售出数量')
+    average_price_7d = models.FloatField(default=0, name='近7天的平均价格')
+    date = models.DateField(null=True, name='日期，记录数据对应的具体日期')
+    asin = models.CharField(max_length=30, name='亚马逊标准识别编号(ASIN)')
+    total_unit = models.IntegerField(default=0, name='总库存单位数')
+    available = models.IntegerField(default=0, name='可用库存')
+    inbound_fc_unit = models.IntegerField(default=0, name='正在运往配送中心的库存单位')
+    fc_unit = models.IntegerField(default=0, name='配送中心的库存单位')
+    inbound_unit = models.IntegerField(default=0, name='正在运往的库存单位')
+    days_of_supply_by_amazon = models.IntegerField(default=0, name='亚马逊提供的供货天数')
+    recommended_replenishment_qty = models.IntegerField(default=0, name='推荐补货数量')
+    currency = models.CharField(max_length=2, default='USD', name='货币单位')
+    country = models.CharField(max_length=2, default='US', name='国家代码')
+    
