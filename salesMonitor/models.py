@@ -694,5 +694,16 @@ class DailyProductSalesAndInventory(models.Model):
     country = models.CharField(max_length=2, default='US', name='country', verbose_name='国家代码')
     
     class Meta:
-        unique_together = (("sku", "date"), )
+        unique_together = ("sku", "date")
         
+
+class SkuFnSkuAsinCountry(models.Model):
+    """记录sku和seller_sku的关系"""
+    seller_sku = models.CharField(max_length=32, default='')
+    sku = models.CharField(max_length=32, default='')
+    asin = models.CharField(max_length=32, default='')
+    fnsku = models.CharField(max_length=32, default='')
+    country = models.CharField(max_length=4, default='')
+
+    class Meta:
+        unique_together = ('seller_sku', 'sku', 'asin', 'fnsku', 'country')
