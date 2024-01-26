@@ -6,7 +6,7 @@
 import os
 import pytz
 from dotenv import load_dotenv
-from sp_api.api import Orders, Inventories, Products, Sales
+from sp_api.api import Orders, Inventories, Products, Sales, Replenishment
 from sp_api.base import Marketplaces, Granularity
 from datetime import datetime, timezone, timedelta
 from comfyableAOA.settings import BASE_DIR
@@ -71,7 +71,6 @@ def get_order_ids():
         objs.append({
             'sku': item['SellerSKU'],
             'asin': item['ASIN'],
-            'sold_qty': item['QuantityOrdered'],    # TODO 需要核实
             'date': date,
         })
         seller_skus.append(item['SellerSKU'])
@@ -128,12 +127,13 @@ def get_order_ids():
 
     # --------------------------Sales--------------------------
     sales_client = Sales(**init_client_params)
-    sku_sales_dict = {}
+    sku_sales_7_dict = {}
+    sku_sales_1_dict = {}
     
-    def get_order_metrics(sku):
+    def get_order_metrics(sku, days):
         now_utc = datetime.now(utc_timezone)
         end_utc = now_utc.replace(hour=23, minute=59, second=59, microsecond=0)  # 将当前时间设置为今天的最后一刻
-        start_utc = end_utc - timedelta(days=6)
+        start_utc = end_utc - timedelta(days=days)
         # 转换UTC时间到America/Los_Angeles时区
         start_la = start_utc.astimezone(la_timezone)
         end_la = end_utc.astimezone(la_timezone)
@@ -142,16 +142,23 @@ def get_order_ids():
             granularity=Granularity.TOTAL,
             sku=sku,
         )
-        sku_sales_dict[sku] = resp.payload[0]
+        if days == 6:
+            sku_sales_7_dict[sku] = resp.payload[0]
+        else:
+            sku_sales_1_dict[sku] = resp.payload[0]
         return
     
     for sku in seller_skus:
-        get_order_metrics(sku)
+        get_order_metrics(sku, days=6)
+        get_order_metrics(sku, days=1)
 
     for obj in objs:
-        sales_dict = sku_sales_dict.get(obj['sku']) or {}
-        obj['sold_qty_average_7d'] = sales_dict.get('unitCount') or 0
-        obj['average_price_7d'] = sales_dict.get('averageUnitPrice', {}).get('amount') or 0
+        sales_7_dict = sku_sales_7_dict.get(obj['sku']) or {}
+        sales_1_dict = sku_sales_1_dict.get(obj['sku']) or {}
+        obj['sold_qty_average_7d'] = sales_7_dict.get('unitCount') or 0
+        obj['average_price_7d'] = sales_7_dict.get('averageUnitPrice', {}).get('amount') or 0
+        obj['sales_amount'] = sales_1_dict.get('totalSales', {}).get('amount') or 0
+        obj['sold_qty'] = sales_1_dict.get('unitCount') or 0
     
     # save
     for obj in objs:
@@ -161,7 +168,7 @@ def get_order_ids():
             date=obj.pop('date'),
         )
     
-    # sales_amount, days_of_supply_by_amazon, recommended_replenishment_qty
+    # days_of_supply_by_amazon, recommended_replenishment_qty
 
 
 def run():
