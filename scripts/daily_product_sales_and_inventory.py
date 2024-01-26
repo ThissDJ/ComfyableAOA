@@ -108,10 +108,10 @@ def get_order_ids():
         obj['available'] = inventoryDetails['fulfillableQuantity']
         # 运往配送中心的库存单位 TODO 需要核实
         obj['inbound_fc_unit'] = inventoryDetails['inboundWorkingQuantity'] + inventoryDetails['inboundShippedQuantity']
-        # 配送中心的库存单位 TODO 需要核实
-        obj['fc_unit'] = inventoryDetails['reservedQuantity']['fcProcessingQuantity']
-        # 已到达的库存
-        obj['inbound_unit'] = inventoryDetails['inboundReceivingQuantity']
+        # 配送中心的库存单位
+        obj['fc_unit'] = inventoryDetails['reservedQuantity']['fcProcessingQuantity'] + inventoryDetails['reservedQuantity']['pendingTransshipmentQuantity']
+        # 在途库存
+        obj['inbound_unit'] = inventoryDetails['inboundReceivingQuantity'] + inventoryDetails['inboundShippedQuantity'] + inventoryDetails['inboundWorkingQuantity']
 
     # --------------------------Products--------------------------
     # product_client = Products(**init_client_params)

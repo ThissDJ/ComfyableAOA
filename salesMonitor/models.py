@@ -687,7 +687,7 @@ class DailyProductSalesAndInventory(models.Model):
     available = models.IntegerField(default=0, name='available', verbose_name='可用库存')
     inbound_fc_unit = models.IntegerField(default=0, name='inbound_fc_unit', verbose_name='正在运往配送中心的库存单位')
     fc_unit = models.IntegerField(default=0, name='fc_unit', verbose_name='配送中心的库存单位')
-    inbound_unit = models.IntegerField(default=0, name='inbound_unit', verbose_name='正在运往的库存单位')
+    inbound_unit = models.IntegerField(default=0, name='inbound_unit', verbose_name='在途库存')
     days_of_supply_by_amazon = models.IntegerField(default=0, name='days_of_supply_by_amazon', verbose_name='亚马逊提供的供货天数')
     recommended_replenishment_qty = models.IntegerField(default=0, name='recommended_replenishment_qty', verbose_name='推荐补货数量')
     currency = models.CharField(max_length=2, default='USD', name='currency', verbose_name='货币单位')
