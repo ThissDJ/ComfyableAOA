@@ -8,11 +8,13 @@ import pytz
 from dotenv import load_dotenv
 from sp_api.api import Orders, Inventories, Products, Sales
 from sp_api.base import Marketplaces, Granularity
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from comfyableAOA.settings import BASE_DIR
+from salesMonitor.models import DailyProductSalesAndInventory
 
 load_dotenv(f"{BASE_DIR}/.env")
 la_timezone = pytz.timezone('America/Los_Angeles')
+utc_timezone = pytz.timezone('UTC')
 
 au_credentials = dict(
     refresh_token=os.getenv("SELLING_PARTNER_APP_REFRESH_TOKEN_AU"),
@@ -112,7 +114,54 @@ def get_order_ids():
         # 已到达的库存
         obj['inbound_unit'] = inventoryDetails['inboundReceivingQuantity']
 
+    # --------------------------Products--------------------------
+    # product_client = Products(**init_client_params)
+    # sku_pricing_dict = {}
 
+    # def get_competitive_pricing_for_skus(skus):
+    #     resp = product_client.get_competitive_pricing_for_skus(seller_sku_list=skus)
+    #     for p in resp.payload:
+    #         sku_pricing_dict[p['SellerSKU']] = p
+    
+    # for i in range(0, len(seller_skus), 20):
+    #     get_competitive_pricing_for_skus(skus=seller_skus[i: i + 20])
+
+    # --------------------------Sales--------------------------
+    sales_client = Sales(**init_client_params)
+    sku_sales_dict = {}
+    
+    def get_order_metrics(sku):
+        now_utc = datetime.now(utc_timezone)
+        end_utc = now_utc.replace(hour=23, minute=59, second=59, microsecond=0)  # 将当前时间设置为今天的最后一刻
+        start_utc = end_utc - timedelta(days=6)
+        # 转换UTC时间到America/Los_Angeles时区
+        start_la = start_utc.astimezone(la_timezone)
+        end_la = end_utc.astimezone(la_timezone)
+        resp = sales_client.get_order_metrics(
+            interval=(start_la, end_la),
+            granularity=Granularity.TOTAL,
+            sku=sku,
+        )
+        sku_sales_dict[sku] = resp.payload[0]
+        return
+    
+    for sku in seller_skus:
+        get_order_metrics(sku)
+
+    for obj in objs:
+        sales_dict = sku_sales_dict.get(obj['sku']) or {}
+        obj['sold_qty_average_7d'] = sales_dict.get('unitCount') or 0
+        obj['average_price_7d'] = sales_dict.get('averageUnitPrice', {}).get('amount') or 0
+    
+    # save
+    for obj in objs:
+        DailyProductSalesAndInventory.objects.update_or_create(
+            defaults=obj,
+            sku=obj.pop('sku'),
+            date=obj.pop('date'),
+        )
+    
+    # sales_amount, days_of_supply_by_amazon, recommended_replenishment_qty
 
 
 def run():
