@@ -21,13 +21,25 @@ au_credentials = dict(
     lwa_app_id=os.getenv("SELLING_PARTNER_APP_CLIENT_ID_AU"),
     lwa_client_secret=os.getenv("SELLING_PARTNER_APP_CLIENT_SECRET_AU")
 )
-init_client_params = dict(
+
+us_credentials = dict(
+    refresh_token=os.getenv("SELLING_PARTNER_APP_REFRESH_TOKEN_US"),
+    lwa_app_id=os.getenv("SELLING_PARTNER_APP_CLIENT_ID_US"),
+    lwa_client_secret=os.getenv("SELLING_PARTNER_APP_CLIENT_SECRET_US")
+)
+
+init_client_params_au = dict(
     credentials=au_credentials,
     marketplace=Marketplaces.AU
 )
 
+init_client_params_us = dict(
+    credentials=us_credentials,
+    marketplace=Marketplaces.US
+)
 
-def get_order_ids():
+
+def get_order_ids(init_client_params):
     objs = []
 
     payload_list = []
@@ -172,4 +184,4 @@ def get_order_ids():
 
 
 def run():
-    get_order_ids()
+    get_order_ids(init_client_params_au)
