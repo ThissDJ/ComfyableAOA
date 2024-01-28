@@ -71,7 +71,7 @@ def get_document_id(client: ReportsV2, report_id: str):
         return
     elif report.payload["processingStatus"] != ProcessingStatus.DONE.value:
         time.sleep(10)
-        get_document_id(report_id)
+        get_document_id(client, report_id)
     else:
         return report.payload["reportDocumentId"]
 
