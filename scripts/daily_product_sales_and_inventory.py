@@ -3,11 +3,13 @@
 `python manage.py runscript daily_product_sales_and_inventory`
 """
 
+import json
 import os
+import time
 import pytz
 from dotenv import load_dotenv
-from sp_api.api import Orders, Inventories, Products, Sales, Replenishment
-from sp_api.base import Marketplaces, Granularity
+from sp_api.api import Orders, Inventories, Sales, ReportsV2
+from sp_api.base import Marketplaces, Granularity, ReportType, ProcessingStatus
 from datetime import datetime, timezone, timedelta
 from comfyableAOA.settings import BASE_DIR
 from salesMonitor.models import DailyProductSalesAndInventory
@@ -39,103 +41,122 @@ init_client_params_us = dict(
 )
 
 
+def get_report_document_detail(client: ReportsV2, document_id: str, key="Merchant SKU"):
+    if not document_id:
+        return {}
+
+    client.get_report_document(
+        reportDocumentId=document_id,
+        download=True,
+        file=f"{BASE_DIR}/scripts/report.txt",
+        character_code='iso-8859-1',
+    )
+
+    sku_doc_dict = {}
+    with open(f"{BASE_DIR}/scripts/report.txt", encoding='iso-8859-1') as f:
+        readlines = f.readlines()
+        header = readlines[0]
+        header = [head.replace('\n', '') for head in header.split('\t')]
+        for line in readlines[1:]:
+            doc = dict(zip(header, [li.replace('\n', '') for li in line.split('\t')]))
+            sku_doc_dict[doc[key]] = doc
+    
+    return sku_doc_dict
+
+
+def get_document_id(client: ReportsV2, report_id: str):
+    report = client.get_report(reportId=report_id)
+    print(report.payload)
+    if report.payload["processingStatus"] in (ProcessingStatus.FATAL.value, ProcessingStatus.CANCELLED.value):
+        return
+    elif report.payload["processingStatus"] != ProcessingStatus.DONE.value:
+        time.sleep(10)
+        get_document_id(report_id)
+    else:
+        return report.payload["reportDocumentId"]
+
+
 def get_order_ids(init_client_params):
     objs = []
-
-    payload_list = []
-    order_client = Orders(**init_client_params)
     date = datetime.now(la_timezone).date()
 
-    # get order list
-    def get_orders(next_token=None):
-        resp = order_client.get_orders(
-            CreatedAfter=date,
-            NextToken=next_token,
-        )
-        payload_list.extend(resp.payload['Orders'])
-        if resp.next_token:
-            get_orders(next_token=resp.next_token)
+    report_client = ReportsV2(**init_client_params)
+    # 获取sku,asin
+    inventory = report_client.create_report(
+        reportType=ReportType.GET_AFN_INVENTORY_DATA,
+        dataStartTime=datetime.now(la_timezone).date().isoformat(),
+    )
+    time.sleep(1)
+    # 获取days_of_supply_by_amazon,recommended_replenishment_qty
+    recommend = report_client.create_report(
+        reportType=ReportType.GET_RESTOCK_INVENTORY_RECOMMENDATIONS_REPORT,
+        dataStartTime=datetime.now(la_timezone).date().isoformat(),
+    )
 
-        return
-    
-    get_orders()
+    time.sleep(30)
+    print(inventory.payload['reportId'], recommend.payload['reportId'])
+    inventory_document_id = get_document_id(report_client, inventory.payload['reportId'])
+    recommend_document_id = get_document_id(report_client, recommend.payload['reportId'])
 
-    seller_order_ids = [payload['SellerOrderId'] for payload in payload_list]
-
-    # get order detail
-    order_items = []
-    for order_id in seller_order_ids:
-        def get_order_items(next_token=None):
-            resp = order_client.get_order_items(
-                order_id=order_id,
-                NextToken=next_token,
-            )
-            order_items.extend(resp.payload['OrderItems'])
-            if resp.next_token:
-                get_order_items(next_token=resp.next_token)
-
-            return
-        
-        get_order_items()
+    sku_inventory_dict = get_report_document_detail(report_client, inventory_document_id, key='seller-sku')
+    sku_recommend_dict = get_report_document_detail(report_client, recommend_document_id, key='Merchant SKU')
     
     seller_skus = []
-    for item in order_items:
+    for sku, item in sku_inventory_dict.items():
         objs.append({
-            'sku': item['SellerSKU'],
-            'asin': item['ASIN'],
+            'sku': sku,
+            'asin': item['asin'],
             'date': date,
+            'days_of_supply_by_amazon': sku_recommend_dict.get(sku, {}).get('Total Days of Supply (including units from open shipments)') or '0',
+            'recommended_replenishment_qty': sku_recommend_dict.get(sku, {}).get('Recommended replenishment qty') or '0',
+            'inbound_unit': sku_recommend_dict.get(sku, {}).get('Inbound') or 0,
+            'available': sku_recommend_dict.get(sku, {}).get('Available') or 0,
+            'total_unit': sku_recommend_dict.get(sku, {}).get('Total Units') or 0,
+            'fnsku': sku_recommend_dict.get(sku, {}).get('FNSKU') or 0,
+            'inbound_fc_unit': (sku_recommend_dict.get(sku, {}).get('Working') or 0) + (sku_recommend_dict.get(sku, {}).get('Shipped') or 0),
+            'fc_unit': (sku_recommend_dict.get(sku, {}).get('FC transfer') or 0) + (sku_recommend_dict.get(sku, {}).get('FC Processing') or 0),
+            'country': sku_recommend_dict.get(sku, {}).get('Country') or '',
+            'currency': sku_recommend_dict.get(sku, {}).get('Currency code') or '',
         })
-        seller_skus.append(item['SellerSKU'])
+        seller_skus.append(sku)
     
-    # 库存
-    inventories_client = Inventories(**init_client_params)
-    inventories_list = []
+    # --------------------------库存--------------------------
+    # inventories_client = Inventories(**init_client_params)
+    # inventories_list = []
 
-    def get_inventory_summary_marketplace(skus, next_token=None):
-        resp = inventories_client.get_inventory_summary_marketplace(
-            details=True,
-            sellerSkus=skus,
-            NextToken=next_token,
-        )
-        inventories_list.extend(resp.payload['inventorySummaries'])
-        if resp.next_token:
-            get_inventory_summary_marketplace(skus, next_token=resp.next_token)
+    # def get_inventory_summary_marketplace(skus, next_token=None):
+    #     resp = inventories_client.get_inventory_summary_marketplace(
+    #         details=True,
+    #         sellerSkus=skus,
+    #         NextToken=next_token,
+    #     )
+    #     inventories_list.extend(resp.payload['inventorySummaries'])
+    #     if resp.next_token:
+    #         get_inventory_summary_marketplace(skus, next_token=resp.next_token)
 
-        return
+    #     return
     
-    for i in range(0, len(seller_skus), 50):
-        get_inventory_summary_marketplace(skus=seller_skus[i: i + 50])
+    # for i in range(0, len(seller_skus), 50):
+    #     get_inventory_summary_marketplace(skus=seller_skus[i: i + 50])
 
-    inventories_dict = {inventories['sellerSku']: inventories for inventories in inventories_list}
-    for obj in objs:
-        inventories = inventories_dict.get(obj['sku'])
-        if not inventories:
-            continue
+    # inventories_dict = {inventories['sellerSku']: inventories for inventories in inventories_list}
+    # for obj in objs:
+    #     inventories = inventories_dict.get(obj['sku'])
+    #     if not inventories:
+    #         continue
         
-        inventoryDetails = inventories['inventoryDetails']
-        obj['fnsku'] = inventories['fnSku']
+        # inventoryDetails = inventories['inventoryDetails']
+        # obj['fnsku'] = inventories['fnSku']
         # 商品总库存
-        obj['total_unit'] = inventories['totalQuantity']
+        # obj['total_unit'] = inventories['totalQuantity']
         # 可用库存
-        obj['available'] = inventoryDetails['fulfillableQuantity']
-        # 运往配送中心的库存单位 TODO 需要核实
-        obj['inbound_fc_unit'] = inventoryDetails['inboundWorkingQuantity'] + inventoryDetails['inboundShippedQuantity']
+        # obj['available'] = inventoryDetails['fulfillableQuantity']
+        # 运往配送中心的库存单位
+        # obj['inbound_fc_unit'] = inventoryDetails['inboundWorkingQuantity'] + inventoryDetails['inboundShippedQuantity']
         # 配送中心的库存单位
-        obj['fc_unit'] = inventoryDetails['reservedQuantity']['fcProcessingQuantity'] + inventoryDetails['reservedQuantity']['pendingTransshipmentQuantity']
+        # obj['fc_unit'] = inventoryDetails['reservedQuantity']['fcProcessingQuantity'] + inventoryDetails['reservedQuantity']['pendingTransshipmentQuantity']
         # 在途库存
-        obj['inbound_unit'] = inventoryDetails['inboundReceivingQuantity'] + inventoryDetails['inboundShippedQuantity'] + inventoryDetails['inboundWorkingQuantity']
-
-    # --------------------------Products--------------------------
-    # product_client = Products(**init_client_params)
-    # sku_pricing_dict = {}
-
-    # def get_competitive_pricing_for_skus(skus):
-    #     resp = product_client.get_competitive_pricing_for_skus(seller_sku_list=skus)
-    #     for p in resp.payload:
-    #         sku_pricing_dict[p['SellerSKU']] = p
-    
-    # for i in range(0, len(seller_skus), 20):
-    #     get_competitive_pricing_for_skus(skus=seller_skus[i: i + 20])
+        # obj['inbound_unit'] = inventoryDetails['inboundReceivingQuantity'] + inventoryDetails['inboundShippedQuantity'] + inventoryDetails['inboundWorkingQuantity']
 
     # --------------------------Sales--------------------------
     sales_client = Sales(**init_client_params)
@@ -179,9 +200,7 @@ def get_order_ids(init_client_params):
             sku=obj.pop('sku'),
             date=obj.pop('date'),
         )
-    
-    # days_of_supply_by_amazon, recommended_replenishment_qty
 
 
 def run():
-    get_order_ids(init_client_params_au)
+    get_order_ids(init_client_params_us)

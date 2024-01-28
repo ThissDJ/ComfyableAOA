@@ -206,3 +206,5 @@ cython_debug/
 # migrations
 migrations/
 .vscode
+reports.json
+report.txt
