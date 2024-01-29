@@ -109,16 +109,17 @@ def get_order_ids(init_client_params):
             'date': date,
             'days_of_supply_by_amazon': sku_recommend_dict.get(sku, {}).get('Total Days of Supply (including units from open shipments)') or '0',
             'recommended_replenishment_qty': sku_recommend_dict.get(sku, {}).get('Recommended replenishment qty') or '0',
-            'inbound_unit': sku_recommend_dict.get(sku, {}).get('Inbound') or 0,
-            'available': sku_recommend_dict.get(sku, {}).get('Available') or 0,
-            'total_unit': sku_recommend_dict.get(sku, {}).get('Total Units') or 0,
-            'fnsku': sku_recommend_dict.get(sku, {}).get('FNSKU') or 0,
-            'inbound_fc_unit': (sku_recommend_dict.get(sku, {}).get('Working') or 0) + (sku_recommend_dict.get(sku, {}).get('Shipped') or 0),
-            'fc_unit': (sku_recommend_dict.get(sku, {}).get('FC transfer') or 0) + (sku_recommend_dict.get(sku, {}).get('FC Processing') or 0),
+            'inbound_unit': int(sku_recommend_dict.get(sku, {}).get('Inbound') or 0),
+            'available': int(sku_recommend_dict.get(sku, {}).get('Available') or 0),
+            'total_unit': int(sku_recommend_dict.get(sku, {}).get('Total Units') or 0),
+            'fnsku': int(sku_recommend_dict.get(sku, {}).get('FNSKU') or 0),
+            'inbound_fc_unit': int(sku_recommend_dict.get(sku, {}).get('Working') or 0) + int(sku_recommend_dict.get(sku, {}).get('Shipped') or 0),
+            'fc_unit': int(sku_recommend_dict.get(sku, {}).get('FC transfer') or 0) + int(sku_recommend_dict.get(sku, {}).get('FC Processing') or 0),
             'country': sku_recommend_dict.get(sku, {}).get('Country') or '',
             'currency': sku_recommend_dict.get(sku, {}).get('Currency code') or '',
         })
-        seller_skus.append(sku)
+        if int(sku_recommend_dict.get(sku, {}).get('Total Units') or 0) > 0:
+            seller_skus.append(sku)
     
     # --------------------------库存--------------------------
     # inventories_client = Inventories(**init_client_params)
@@ -181,6 +182,7 @@ def get_order_ids(init_client_params):
             sku_sales_1_dict[sku] = resp.payload[0]
         return
     
+    print(f"seller_skus count={len(seller_skus)}")
     for sku in seller_skus:
         get_order_metrics(sku, days=6)
         get_order_metrics(sku, days=1)
@@ -203,4 +205,5 @@ def get_order_ids(init_client_params):
 
 
 def run():
+    # get_order_ids(init_client_params_au)
     get_order_ids(init_client_params_us)
