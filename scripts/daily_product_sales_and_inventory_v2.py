@@ -54,7 +54,7 @@ def get_now_date(zone):
 
 class InventoriesClient:
     """库存相关"""
-    def __init__(self, params: dict, start_time, sleep: int = 3) -> None:
+    def __init__(self, params: dict, start_time, sleep: int = 1) -> None:
         self.params = params
         self.start_time = start_time
         self.sleep = sleep
