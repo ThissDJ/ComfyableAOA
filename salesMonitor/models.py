@@ -699,8 +699,8 @@ class DailyProductSalesAndInventory(models.Model):
 
 class SkuFnSkuAsinCountry(models.Model):
     """记录sku和seller_sku的关系"""
-    seller_sku = models.CharField(max_length=32, default='')
-    sku = models.CharField(max_length=32, default='')
+    seller_sku = models.CharField(max_length=32, default='', verbose_name='原始sku')
+    sku = models.CharField(max_length=32, default='', verbose_name='转售sku')
     asin = models.CharField(max_length=32, default='')
     fnsku = models.CharField(max_length=32, default='')
     country = models.CharField(max_length=4, default='')

@@ -82,21 +82,21 @@ def get_order_ids(init_client_params):
 
     report_client = ReportsV2(**init_client_params)
     # 获取sku,asin
-    inventory = report_client.create_report(
-        reportType=ReportType.GET_AFN_INVENTORY_DATA,
-        dataStartTime=datetime.now(la_timezone).date().isoformat(),
-    )
-    time.sleep(1)
-    # 获取days_of_supply_by_amazon,recommended_replenishment_qty
-    recommend = report_client.create_report(
-        reportType=ReportType.GET_RESTOCK_INVENTORY_RECOMMENDATIONS_REPORT,
-        dataStartTime=datetime.now(la_timezone).date().isoformat(),
-    )
+    # inventory = report_client.create_report(
+    #     reportType=ReportType.GET_AFN_INVENTORY_DATA,
+    #     dataStartTime=datetime.now(la_timezone).date().isoformat(),
+    # )
+    # time.sleep(1)
+    # # 获取days_of_supply_by_amazon,recommended_replenishment_qty
+    # recommend = report_client.create_report(
+    #     reportType=ReportType.GET_RESTOCK_INVENTORY_RECOMMENDATIONS_REPORT,
+    #     dataStartTime=datetime.now(la_timezone).date().isoformat(),
+    # )
 
     time.sleep(30)
-    print(inventory.payload['reportId'], recommend.payload['reportId'])
-    inventory_document_id = get_document_id(report_client, inventory.payload['reportId'])
-    recommend_document_id = get_document_id(report_client, recommend.payload['reportId'])
+    # print(inventory.payload['reportId'], recommend.payload['reportId'])
+    inventory_document_id = get_document_id(report_client, "292314019751")
+    recommend_document_id = get_document_id(report_client, "292315019751")
 
     sku_inventory_dict = get_report_document_detail(report_client, inventory_document_id, key='seller-sku')
     sku_recommend_dict = get_report_document_detail(report_client, recommend_document_id, key='Merchant SKU')
@@ -112,7 +112,7 @@ def get_order_ids(init_client_params):
             'inbound_unit': int(sku_recommend_dict.get(sku, {}).get('Inbound') or 0),
             'available': int(sku_recommend_dict.get(sku, {}).get('Available') or 0),
             'total_unit': int(sku_recommend_dict.get(sku, {}).get('Total Units') or 0),
-            'fnsku': int(sku_recommend_dict.get(sku, {}).get('FNSKU') or 0),
+            'fnsku': sku_recommend_dict.get(sku, {}).get('FNSKU') or '',
             'inbound_fc_unit': int(sku_recommend_dict.get(sku, {}).get('Working') or 0) + int(sku_recommend_dict.get(sku, {}).get('Shipped') or 0),
             'fc_unit': int(sku_recommend_dict.get(sku, {}).get('FC transfer') or 0) + int(sku_recommend_dict.get(sku, {}).get('FC Processing') or 0),
             'country': sku_recommend_dict.get(sku, {}).get('Country') or '',
@@ -186,6 +186,7 @@ def get_order_ids(init_client_params):
     for sku in seller_skus:
         get_order_metrics(sku, days=6)
         get_order_metrics(sku, days=1)
+        time.sleep(3)
 
     for obj in objs:
         sales_7_dict = sku_sales_7_dict.get(obj['sku']) or {}
