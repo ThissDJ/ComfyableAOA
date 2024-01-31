@@ -375,7 +375,7 @@ def run():
         print(f"start run, date={date}")
         with ThreadPoolExecutor(max_workers=4) as executor:
             executor.submit(update_today_sales_and_inventory, init_client_params_au, 'AUD', 'AU', date, 1)
-            executor.submit(update_today_sales_and_inventory, init_client_params_us, 'USD', 'US', date, 365)
+            executor.submit(update_today_sales_and_inventory, init_client_params_us, 'USD', 'US', date, 1)
 
             executor.submit(update_yesterday_sales, init_client_params_au, yesterday, "AU")
             executor.submit(update_yesterday_sales, init_client_params_us, yesterday, "US")
