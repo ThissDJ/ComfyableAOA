@@ -79,4 +79,5 @@ class ProductionStageAdmin(admin.ModelAdmin):
 
 @admin.register(DailyProductSalesAndInventory)
 class DailyProductSalesAndInventoryAdmin(admin.ModelAdmin):
-    search_fields = ['sku', 'asin', 'date']
+    search_fields = ('sku', 'asin')
+    list_display = [field.name for field in DailyProductSalesAndInventory._meta.get_fields()]
