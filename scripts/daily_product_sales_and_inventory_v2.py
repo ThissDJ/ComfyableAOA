@@ -2,6 +2,7 @@
 run
 python manage.py runscript daily_product_sales_and_inventory_v2
 """
+from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
 import os
 import time
@@ -366,11 +367,15 @@ def do_work(params, currency, country, date, inventory_days):
 
 def run():
     while True:
-        try:
-            date = get_now_date(la_timezone)
-            do_work(params=init_client_params_au, currency='AUD', country='AU', date=date, inventory_days=1)
-            # do_work(params=init_client_params_us, currency='USD', country='US', date=date)
-        except Exception as e:
-            print(f"run.do_work err={e}")
+        date = get_now_date(la_timezone)
+        yesterday = date - timedelta(days=1)
+        print(f"start run, date={date}")
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            executor.submit(update_today_sales_and_inventory, init_client_params_au, 'AUD', 'AU', date, 1)
+            executor.submit(update_today_sales_and_inventory, init_client_params_us, 'USD', 'US', date, 365)
+
+            executor.submit(update_yesterday_sales, init_client_params_au, yesterday)
+            executor.submit(update_yesterday_sales, init_client_params_us, yesterday)
+
         time.sleep(60 * 30)
-    
+        
