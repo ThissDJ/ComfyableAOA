@@ -182,6 +182,7 @@ class SalesClient:
         self.err_sleep = 10
         self.sales_dict = {}
         self.aggregation_sale_dict = {}
+        print(f"SalesClient init ..., asin_list count={len(asin_list)}")
 
     def get_aggregation_sale_dict(self):
         s_time = int(time.time())
@@ -261,14 +262,14 @@ def sum_asin_objs(asin_objs) -> dict:
     return seller_sku_obj
 
 
-def update_today_sales_and_inventory(params, currency, country, date):
+def update_today_sales_and_inventory(params, currency, country, date, inventory_days=365):
     # model DailyProductSalesAndInventory
     objs1 = []
     # model SkuFnSkuAsinCountry
     objs2 = []
 
     # 通过库存接口拿到一年内所有的asin
-    inventories_client = InventoriesClient(params, start_time=get_one_year_ago())
+    inventories_client = InventoriesClient(params, start_time=get_one_year_ago(inventory_days))
     inventory_summaries = inventories_client.get_inventory_summary_marketplace()
     asin_dict = defaultdict(list)
     if not inventory_summaries:
@@ -358,8 +359,8 @@ def update_yesterday_sales(params, yesterday):
         sku.save()
 
 
-def do_work(params, currency, country, date):
-    update_today_sales_and_inventory(params, currency=currency, country=country, date=date)
+def do_work(params, currency, country, date, inventory_days):
+    update_today_sales_and_inventory(params, currency=currency, country=country, date=date, inventory_days=inventory_days)
     update_yesterday_sales(params, yesterday=date - timedelta(days=1))
 
 
@@ -367,8 +368,8 @@ def run():
     while True:
         try:
             date = get_now_date(la_timezone)
-            do_work(params=init_client_params_au, currency='AUD', country='AU', date=date)
-            do_work(params=init_client_params_us, currency='USD', country='US', date=date)
+            do_work(params=init_client_params_au, currency='AUD', country='AU', date=date, inventory_days=1)
+            # do_work(params=init_client_params_us, currency='USD', country='US', date=date)
         except Exception as e:
             print(f"run.do_work err={e}")
         time.sleep(60 * 30)
