@@ -342,10 +342,11 @@ def update_today_sales_and_inventory(params, currency, country, date, inventory_
     print(f"update_today_sales_and_inventory done country={country}, update count={len(objs1)}")
 
 
-def update_yesterday_sales(params, yesterday):
+def update_yesterday_sales(params, yesterday, country):
     """更新前一天的销售情况"""
     skus = DailyProductSalesAndInventory.objects.filter(
         date=yesterday,
+        country=country,
     )
     asin_list = [s.asin for s in skus]
     if not asin_list:
@@ -359,6 +360,7 @@ def update_yesterday_sales(params, yesterday):
         sku.sold_qty_average_7d = aggregation_sale_dict.get(sku.asin, {}).get('sold_qty_average_7d') or sku.sold_qty_average_7d
         sku.average_price_7d = aggregation_sale_dict.get(sku.asin, {}).get('average_price_7d') or sku.average_price_7d
         sku.save()
+    print(f"update_yesterday_sales done country={country}, yesterday={yesterday}")
 
 
 def do_work(params, currency, country, date, inventory_days):
@@ -375,7 +377,7 @@ def run():
             executor.submit(update_today_sales_and_inventory, init_client_params_au, 'AUD', 'AU', date, 1)
             executor.submit(update_today_sales_and_inventory, init_client_params_us, 'USD', 'US', date, 365)
 
-            executor.submit(update_yesterday_sales, init_client_params_au, yesterday)
-            executor.submit(update_yesterday_sales, init_client_params_us, yesterday)
+            executor.submit(update_yesterday_sales, init_client_params_au, yesterday, "AU")
+            executor.submit(update_yesterday_sales, init_client_params_us, yesterday, "US")
 
         time.sleep(60 * 30)
