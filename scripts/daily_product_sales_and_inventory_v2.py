@@ -261,12 +261,11 @@ def sum_asin_objs(asin_objs) -> dict:
     return seller_sku_obj
 
 
-def do_work(params, currency, country):
+def do_work(params, currency, country, date):
     # model DailyProductSalesAndInventory
     objs1 = []
     # model SkuFnSkuAsinCountry
     objs2 = []
-    date = get_now_date(la_timezone)
 
     # 通过库存接口拿到一年内所有的asin
     inventories_client = InventoriesClient(params, start_time=get_one_year_ago())
@@ -340,7 +339,28 @@ def do_work(params, currency, country):
         )
 
 
+def update_yesterday_sales(params, yesterday):
+    """更新前一天的销售情况"""
+    skus = DailyProductSalesAndInventory.objects.filter(
+        date=yesterday,
+    )
+    asin_list = [s.asin for s in skus]
+    if not asin_list:
+        print(f"update_yesterday_sales not asin_list, yesterday={yesterday}")
+        return
+    sales_client = SalesClient(params, asin_list=list(asin_list))
+    aggregation_sale_dict = sales_client.get_aggregation_sale_dict()
+    for sku in skus:
+        sku.sold_qty = aggregation_sale_dict.get(sku.asin, {}).get('sold_qty') or sku.sold_qty
+        sku.sales_amount = aggregation_sale_dict.get(sku.asin, {}).get('sales_amount') or sku.sales_amount
+        sku.sold_qty_average_7d = aggregation_sale_dict.get(sku.asin, {}).get('sold_qty_average_7d') or sku.sold_qty_average_7d
+        sku.average_price_7d = aggregation_sale_dict.get(sku.asin, {}).get('average_price_7d') or sku.average_price_7d
+        sku.save()
+
+
 def run():
     s_time = int(time.time())
-    do_work(init_client_params_au, currency='AUD', country='AU')
+    date = get_now_date(la_timezone)
+    do_work(init_client_params_au, currency='AUD', country='AU', date=date)
     print(f"do_work(init_client_params_au, currency='AUD', country='AU'), diff_time={int(time.time())-s_time}")
+    update_yesterday_sales(init_client_params_au, yesterday=date - timedelta(days=1))
