@@ -261,7 +261,7 @@ def sum_asin_objs(asin_objs) -> dict:
     return seller_sku_obj
 
 
-def do_work(params, currency, country, date):
+def update_today_sales_and_inventory(params, currency, country, date):
     # model DailyProductSalesAndInventory
     objs1 = []
     # model SkuFnSkuAsinCountry
@@ -358,9 +358,18 @@ def update_yesterday_sales(params, yesterday):
         sku.save()
 
 
+def do_work(params, currency, country, date):
+    update_today_sales_and_inventory(params, currency=currency, country=country, date=date)
+    update_yesterday_sales(params, yesterday=date - timedelta(days=1))
+
+
 def run():
-    s_time = int(time.time())
-    date = get_now_date(la_timezone)
-    do_work(init_client_params_au, currency='AUD', country='AU', date=date)
-    print(f"do_work(init_client_params_au, currency='AUD', country='AU'), diff_time={int(time.time())-s_time}")
-    update_yesterday_sales(init_client_params_au, yesterday=date - timedelta(days=1))
+    while True:
+        try:
+            date = get_now_date(la_timezone)
+            do_work(params=init_client_params_au, currency='AUD', country='AU', date=date)
+            do_work(params=init_client_params_us, currency='USD', country='US', date=date)
+        except Exception as e:
+            print(f"run.do_work err={e}")
+        time.sleep(60 * 30)
+    
