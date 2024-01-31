@@ -339,6 +339,7 @@ def update_today_sales_and_inventory(params, currency, country, date, inventory_
             defaults={},
             **obj2
         )
+    print(f"update_today_sales_and_inventory done country={country}, update count={len(objs1)}")
 
 
 def update_yesterday_sales(params, yesterday):
@@ -378,4 +379,3 @@ def run():
             executor.submit(update_yesterday_sales, init_client_params_us, yesterday)
 
         time.sleep(60 * 30)
-        
