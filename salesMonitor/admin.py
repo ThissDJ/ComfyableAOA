@@ -10,7 +10,7 @@ from .models import  DownloadedReport, PaymentTransactionDetail, Product, TodayP
     ProfitLossTable ,\
     CurrencyRate ,\
     ProductionPlanProgress, ProductionStage, ProductionPlanProgress, ProductionStageTypeParameter ,\
-    SkuProductionStageTypeParameter
+    SkuProductionStageTypeParameter, DailyProductSalesAndInventory
 
 #admin.site.register(Product)
 admin.site.register(TodayProductSales)
@@ -75,3 +75,8 @@ class ProductionPlanProgressAdmin(admin.ModelAdmin):
 @admin.register(ProductionStage)
 class ProductionStageAdmin(admin.ModelAdmin):
     list_display = [field.name for field in ProductionStage._meta.get_fields() if field.name not in  ['productionplanprogress', 'productionstagetypeparameter', 'skuproductionstagetypeparameter']]
+
+
+@admin.register(DailyProductSalesAndInventory)
+class DailyProductSalesAndInventoryAdmin(admin.ModelAdmin):
+    search_fields = ['sku', 'asin', 'date']
