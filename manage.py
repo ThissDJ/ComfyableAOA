@@ -20,11 +20,11 @@ def main():
 
 if __name__ == "__main__":
     # Check if the flag is set before running subprocess
-    if "RUN_ONCE_FLAG" not in os.environ:
-        print("Running preflight scripts...")
-        os.environ[
-            "RUN_ONCE_FLAG"
-        ] = "1"  # Set the flag to indicate that the subprocess has been called
-        subprocess.Popen(["python3", "./cron.py"])
+    # if "RUN_ONCE_FLAG" not in os.environ:
+    #     print("Running preflight scripts...")
+    #     os.environ[
+    #         "RUN_ONCE_FLAG"
+    #     ] = "1"  # Set the flag to indicate that the subprocess has been called
+    #     subprocess.Popen(["python3", "./cron.py"])
 
     main()
