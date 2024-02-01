@@ -387,5 +387,5 @@ def run():
 
             executor.submit(update_yesterday_sales, init_client_params_au, yesterday, "AU")
             executor.submit(update_yesterday_sales, init_client_params_us, yesterday, "US")
-
+            print('-' * 100)
         time.sleep(60 * 30)
