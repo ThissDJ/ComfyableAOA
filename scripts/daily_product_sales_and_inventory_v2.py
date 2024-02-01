@@ -306,7 +306,7 @@ def update_today_sales_and_inventory(params, currency, country, date, inventory_
             'asin': inventory['asin'],
             'total_unit': inventory['totalQuantity'],
             'available': inventoryDetails['fulfillableQuantity'],
-            'inbound_fc_unit': inventoryDetails['inboundWorkingQuantity'] + inventoryDetails['inboundShippedQuantity'],
+            'inbound_fc_unit': inventoryDetails['reservedQuantity']['fcProcessingQuantity'] + inventoryDetails['reservedQuantity']['pendingTransshipmentQuantity'] + inventoryDetails['inboundReceivingQuantity'] + inventoryDetails['inboundShippedQuantity'] + inventoryDetails['inboundWorkingQuantity'],
             'fc_unit': inventoryDetails['reservedQuantity']['fcProcessingQuantity'] + inventoryDetails['reservedQuantity']['pendingTransshipmentQuantity'],
             'inbound_unit': inventoryDetails['inboundReceivingQuantity'] + inventoryDetails['inboundShippedQuantity'] + inventoryDetails['inboundWorkingQuantity'],
             'days_of_supply_by_amazon': document_dict.get(inventory['sellerSku'], {}).get('Total Days of Supply (including units from open shipments)') or '0',
