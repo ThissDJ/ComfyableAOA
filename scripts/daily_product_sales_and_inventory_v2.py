@@ -264,6 +264,10 @@ def sum_asin_objs(asin_objs) -> dict:
     seller_sku_obj['inbound_fc_unit'] = sum([o['inbound_fc_unit'] for o in asin_objs])
     seller_sku_obj['fc_unit'] = sum([o['fc_unit'] for o in asin_objs])
     seller_sku_obj['inbound_unit'] = sum([o['inbound_unit'] for o in asin_objs])
+    
+    if seller_sku_obj['total_unit'] == 0 and seller_sku_obj['sales_amount'] == 0:
+        return
+    
     return seller_sku_obj
 
 
