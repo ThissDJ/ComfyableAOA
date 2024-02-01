@@ -70,7 +70,7 @@ class InventoriesClient:
         try:
             resp = self.client.get_inventory_summary_marketplace(
                 details=True,
-                NextToken=next_token,
+                nextToken=next_token,
                 startDateTime=self.start_time
             )
             self.payload.extend(resp.payload['inventorySummaries'])
@@ -374,8 +374,8 @@ def run():
         yesterday = date - timedelta(days=1)
         print(f"start run, date={date}")
         with ThreadPoolExecutor(max_workers=4) as executor:
-            executor.submit(update_today_sales_and_inventory, init_client_params_au, 'AUD', 'AU', date, 1)
-            executor.submit(update_today_sales_and_inventory, init_client_params_us, 'USD', 'US', date, 1)
+            executor.submit(update_today_sales_and_inventory, init_client_params_au, 'AUD', 'AU', date, 365)
+            executor.submit(update_today_sales_and_inventory, init_client_params_us, 'USD', 'US', date, 365)
 
             executor.submit(update_yesterday_sales, init_client_params_au, yesterday, "AU")
             executor.submit(update_yesterday_sales, init_client_params_us, yesterday, "US")
