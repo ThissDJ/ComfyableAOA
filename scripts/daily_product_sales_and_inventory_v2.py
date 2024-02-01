@@ -85,13 +85,13 @@ class InventoriesClient:
 
 class ReportClient:
     """报告相关"""
-    def __init__(self, params: dict, start_time) -> None:
+    def __init__(self, params: dict, start_time, country) -> None:
         self.params = params
         self.start_time = start_time
         self.report_id = None
         self.document_id = None
         self.get_doc_sleep = 10
-        self.file = f"{BASE_DIR}/scripts/report.txt"
+        self.file = f"{BASE_DIR}/scripts/{country}_report.txt"
         self.character_code = "iso-8859-1"
         self.document_key = "Merchant SKU"
         self.document_dict = {}
@@ -293,7 +293,7 @@ def update_today_sales_and_inventory(params, currency, country, date, inventory_
     aggregation_sale_dict = sales_client.get_aggregation_sale_dict()
 
     # 报告相关
-    report_client = ReportClient(params, start_time=date.isoformat())
+    report_client = ReportClient(params, start_time=date.isoformat(), country=country)
     document_dict = report_client.get_document_dict()
 
     asin_obj_dict = defaultdict(list)
