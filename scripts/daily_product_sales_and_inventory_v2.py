@@ -213,6 +213,7 @@ class SalesClient:
                     interval=self.get_interval,
                     granularity=Granularity.DAY,
                     asin=asin,
+                    granularityTimeZone="America/Los_Angeles"
                 )
                 self.sales_dict[asin] = resp.payload
             except Exception as e:
@@ -233,7 +234,10 @@ class SalesClient:
             sold_qty = sales[-1]['unitCount']
             sales_amount = sales[-1]['totalSales']['amount']
             sold_qty_average_7d = sum([s['unitCount'] for s in sales]) / len(sales)
-            average_price_7d = sum([s['totalSales']['amount'] for s in sales]) / len(sales)
+            if sold_qty_average_7d:
+                average_price_7d = sum([s['totalSales']['amount'] for s in sales]) / sum([s['unitCount'] for s in sales])
+            else:
+                average_price_7d = 0
             
             self.aggregation_sale_dict[asin] = {
                 'sold_qty': sold_qty,
