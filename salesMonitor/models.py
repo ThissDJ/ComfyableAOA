@@ -685,7 +685,7 @@ class DailyProductSalesAndInventory(models.Model):
     asin = models.CharField(max_length=30, name='asin', verbose_name='亚马逊标准识别编号(ASIN)')
     total_unit = models.IntegerField(default=0, name='total_unit', verbose_name='总库存单位数')
     available = models.IntegerField(default=0, name='available', verbose_name='可用库存')
-    inbound_fc_unit = models.IntegerField(default=0, name='inbound_fc_unit', verbose_name='正在运往配送中心的库存单位')
+    inbound_fc_unit = models.IntegerField(default=0, name='inbound_fc_unit', verbose_name='在途库存以及fc中转库存数量')
     fc_unit = models.IntegerField(default=0, name='fc_unit', verbose_name='配送中心的库存单位')
     inbound_unit = models.IntegerField(default=0, name='inbound_unit', verbose_name='在途库存')
     days_of_supply_by_amazon = models.CharField(max_length=8, default='0', name='days_of_supply_by_amazon', verbose_name='亚马逊提供的供货天数')
