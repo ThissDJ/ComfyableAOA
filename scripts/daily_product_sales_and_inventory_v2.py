@@ -223,7 +223,7 @@ class SalesClient:
             else:
                 time.sleep(self.sleep)
         e_time = int(time.time())
-        print(f"get_order_metrics 耗时：{s_time-e_time}秒, count={len(self.asin_list)}")
+        print(f"get_order_metrics 耗时：{e_time-s_time}秒, count={len(self.asin_list)}")
         return self.sales_dict
     
     def aggregation_sales(self):
@@ -282,7 +282,7 @@ def update_today_sales_and_inventory(params, currency, country, date, inventory_
     inventory_summaries = inventories_client.get_inventory_summary_marketplace()
     asin_dict = defaultdict(list)
     if not inventory_summaries:
-        print("not inventory_summaries")
+        print(f"{country} not inventory_summaries")
         return
     
     for inventory in inventory_summaries:
@@ -359,7 +359,7 @@ def update_yesterday_sales(params, yesterday, country):
     )
     asin_list = [s.asin for s in skus]
     if not asin_list:
-        print(f"update_yesterday_sales not asin_list, yesterday={yesterday}")
+        print(f"update_yesterday_sales {country} not asin_list, yesterday={yesterday}")
         return
     sales_client = SalesClient(params, asin_list=list(asin_list))
     aggregation_sale_dict = sales_client.get_aggregation_sale_dict()
@@ -372,21 +372,25 @@ def update_yesterday_sales(params, yesterday, country):
     print(f"update_yesterday_sales done country={country}, yesterday={yesterday}")
 
 
-def do_work(params, currency, country, date, inventory_days):
-    update_today_sales_and_inventory(params, currency=currency, country=country, date=date, inventory_days=inventory_days)
-    update_yesterday_sales(params, yesterday=date - timedelta(days=1))
+def run_task_with_delay(params, currency, country, inventory_days, delay=60 * 30):
+    while True:
+        try:
+            now_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            date = get_now_date(la_timezone)
+            yesterday = date - timedelta(days=1)
+            print(f"[{now_time}] run_task_with_delay start [{country}, {date}, {yesterday}]")
+            print('-' * 100)
+            update_today_sales_and_inventory(params, currency, country, date, inventory_days)
+            update_yesterday_sales(params, yesterday, country)
+        except Exception as e:
+            print(f"run update_today_sales_and_inventory error {e}")
+        finally:
+            time.sleep(delay)
 
 
 def run():
-    while True:
-        date = get_now_date(la_timezone)
-        yesterday = date - timedelta(days=1)
-        print(f"start run, date={date}")
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            executor.submit(update_today_sales_and_inventory, init_client_params_au, 'AUD', 'AU', date, 365)
-            executor.submit(update_today_sales_and_inventory, init_client_params_us, 'USD', 'US', date, 365)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        executor.submit(run_task_with_delay, init_client_params_au, 'AUD', 'AU', 365)
+        executor.submit(run_task_with_delay, init_client_params_us, 'USD', 'US', 365)
 
-            executor.submit(update_yesterday_sales, init_client_params_au, yesterday, "AU")
-            executor.submit(update_yesterday_sales, init_client_params_us, yesterday, "US")
-            print('-' * 100)
-        time.sleep(60 * 30)
+    print('程序退出.')
