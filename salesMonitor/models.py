@@ -694,7 +694,7 @@ class DailyProductSalesAndInventory(models.Model):
     country = models.CharField(max_length=2, default='US', name='country', verbose_name='国家代码')
     
     class Meta:
-        unique_together = ("sku", "date")
+        unique_together = ("sku", "date", "country")
         
 
 class SkuFnSkuAsinCountry(models.Model):

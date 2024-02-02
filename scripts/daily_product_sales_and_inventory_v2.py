@@ -340,6 +340,7 @@ def update_today_sales_and_inventory(params, currency, country, date, inventory_
             defaults=obj1,
             sku=obj1.pop('sku'),
             date=obj1.pop('date'),
+            country=obj1.pop('country'),
         )
     
     for obj2 in objs2:
