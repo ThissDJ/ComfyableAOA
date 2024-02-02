@@ -675,8 +675,8 @@ class PaymentTransactionDetail(models.Model):
 # for some countries, such as AU, AE, SA, there might be not days_of_supply_by_amazon and recommended_replenishment_qty. For JP, EU and US, there should be these two values.
 class DailyProductSalesAndInventory(models.Model):
     """日常产品销售和库存"""
-    sku = models.CharField(max_length=30, default="", name='sku', verbose_name='商品的库存单位(SKU)，用于标识产品')
-    fnsku = models.CharField(max_length=30, unique=False, default='nofnsku', name='fnsku', verbose_name='配送网络库存单位(FNSKU)，亚马逊的特定标识符')
+    sku = models.CharField(max_length=30, default="", name='sku', verbose_name='商品的库存单位(SKU)')
+    fnsku = models.CharField(max_length=30, unique=False, default='nofnsku', name='fnsku', verbose_name='配送网络库存单位(FNSKU)')
     sold_qty = models.IntegerField(default=0, name='sold_qty', verbose_name='已售出数量')
     sales_amount = models.FloatField(default=0, name='sales_amount', verbose_name='销售金额')
     sold_qty_average_7d = models.FloatField(default=0, name='sold_qty_average_7d', verbose_name='近7天的平均售出数量')

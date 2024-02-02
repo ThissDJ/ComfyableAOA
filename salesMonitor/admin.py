@@ -10,7 +10,7 @@ from .models import  DownloadedReport, PaymentTransactionDetail, Product, TodayP
     ProfitLossTable ,\
     CurrencyRate ,\
     ProductionPlanProgress, ProductionStage, ProductionPlanProgress, ProductionStageTypeParameter ,\
-    SkuProductionStageTypeParameter, DailyProductSalesAndInventory
+    SkuProductionStageTypeParameter, DailyProductSalesAndInventory, SkuFnSkuAsinCountry
 
 #admin.site.register(Product)
 admin.site.register(TodayProductSales)
@@ -82,3 +82,9 @@ class DailyProductSalesAndInventoryAdmin(admin.ModelAdmin):
     search_fields = ('sku', 'asin')
     ordering = ['-date']
     list_display = [field.name for field in DailyProductSalesAndInventory._meta.get_fields()]
+
+
+@admin.register(SkuFnSkuAsinCountry)
+class SkuFnSkuAsinCountryAdmin(admin.ModelAdmin):
+    search_fields = ('seller_sku', 'sku', 'asin', 'fnsku')
+    list_display = [field.name for field in SkuFnSkuAsinCountry._meta.get_fields()]
