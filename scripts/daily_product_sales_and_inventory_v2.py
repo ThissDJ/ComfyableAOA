@@ -385,6 +385,7 @@ def run_task_with_delay(params, currency, country, inventory_days, delay=60 * 30
         except Exception as e:
             print(f"run update_today_sales_and_inventory error {e}")
         finally:
+            print(f'sleep {delay} 秒...')
             time.sleep(delay)
 
 
