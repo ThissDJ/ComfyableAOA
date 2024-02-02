@@ -175,9 +175,10 @@ class ReportClient:
 
 class SalesClient:
     """销售相关"""
-    def __init__(self, params, asin_list: List[str]) -> None:
+    def __init__(self, params, asin_list: List[str], yesterday=None) -> None:
         self.params = params
         self.asin_list = asin_list
+        self.yesterday = yesterday
         self.days = 6
         self.sleep = 2.2
         self.err_sleep = 10
@@ -199,6 +200,8 @@ class SalesClient:
     @property
     def get_interval(self):
         now_utc = datetime.now(utc_timezone)
+        if self.yesterday:
+            now_utc = now_utc - timedelta(days=1)
         end_utc = now_utc.replace(hour=23, minute=59, second=59, microsecond=0)  # 将当前时间设置为今天的最后一刻
         start_utc = end_utc - timedelta(days=self.days)
         start_la = start_utc.astimezone(la_timezone)
@@ -361,7 +364,7 @@ def update_yesterday_sales(params, yesterday, country):
     if not asin_list:
         print(f"update_yesterday_sales {country} not asin_list, yesterday={yesterday}")
         return
-    sales_client = SalesClient(params, asin_list=list(asin_list))
+    sales_client = SalesClient(params, asin_list=list(asin_list), yesterday=True)
     aggregation_sale_dict = sales_client.get_aggregation_sale_dict()
     for sku in skus:
         sku.sold_qty = aggregation_sale_dict.get(sku.asin, {}).get('sold_qty') or sku.sold_qty
