@@ -199,13 +199,11 @@ class SalesClient:
     
     @property
     def get_interval(self):
-        now_utc = datetime.now(utc_timezone)
+        now_la = datetime.now(la_timezone)
         if self.yesterday:
-            now_utc = now_utc - timedelta(days=1)
-        end_utc = now_utc.replace(hour=23, minute=59, second=59, microsecond=0)  # 将当前时间设置为今天的最后一刻
-        start_utc = end_utc - timedelta(days=self.days)
-        start_la = start_utc.astimezone(la_timezone)
-        end_la = end_utc.astimezone(la_timezone)
+            now_la = now_la - timedelta(days=1)
+        end_la = now_la.replace(hour=0, minute=0, second=0, microsecond=0)  # 将当前时间设置为今天的最后一刻
+        start_la = end_la - timedelta(days=self.days)
         return (start_la, end_la)
     
     def get_order_metrics(self):
