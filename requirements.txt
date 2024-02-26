@@ -15,3 +15,4 @@ xlrd==2.0.1
 cryptography==41.0.7
 requests==2.31.0
 django_extensions==3.0.3
+python-amazon-ad-api==0.5.5

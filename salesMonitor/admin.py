@@ -1,18 +1,18 @@
 from django.contrib import admin
 
-from .models import  DownloadedReport, PaymentTransactionDetail, Product, TodayProductSales, Last7dayProductSales, \
+from .models import DownloadedReport, PaymentTransactionDetail, Product, TodayProductSales, Last7dayProductSales, \
     DailySalesLastYear, FbaInventory, Inventory, ReceivablePurchasedQty, FulfillmentCenterCodeCountry, \
-    HistoryTodayProductSales, HistoryTodaySales ,\
+    HistoryTodayProductSales, HistoryTodaySales, \
     FbaShipment, ShippedSkuQty, ReceivedSkuQty, RemoteFulfillmentSku, Upc, SkuUpc, FbaShipmentPaidBill, \
-    NearestReceivablePurchasedQty ,\
-    Supplier, UserSupplier, SkuSupplier, SkuPurchasingPrice, SkuHeadShippingUnitCost ,\
-    SkuAssetLiabilityTable, SkuManagedBySalesPerson, FbaShipmentCost, SkuPurchaseOrder ,\
-    ProfitLossTable ,\
-    CurrencyRate ,\
-    ProductionPlanProgress, ProductionStage, ProductionPlanProgress, ProductionStageTypeParameter ,\
+    NearestReceivablePurchasedQty, \
+    Supplier, UserSupplier, SkuSupplier, SkuPurchasingPrice, SkuHeadShippingUnitCost, \
+    SkuAssetLiabilityTable, SkuManagedBySalesPerson, FbaShipmentCost, SkuPurchaseOrder, \
+    ProfitLossTable, \
+    CurrencyRate, \
+    ProductionPlanProgress, ProductionStage, ProductionPlanProgress, ProductionStageTypeParameter, \
     SkuProductionStageTypeParameter, DailyProductSalesAndInventory, SkuFnSkuAsinCountry
 
-#admin.site.register(Product)
+# admin.site.register(Product)
 admin.site.register(TodayProductSales)
 admin.site.register(Last7dayProductSales)
 admin.site.register(DailySalesLastYear)
@@ -43,14 +43,17 @@ admin.site.register(SkuProductionStageTypeParameter)
 admin.site.register(DownloadedReport)
 admin.site.register(PaymentTransactionDetail)
 
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('sku', 'new', 'image','discontinued','transparency')
-    fields = ('sku', 'new', 'image','discontinued','transparency')
+    list_display = ('sku', 'new', 'image', 'discontinued', 'transparency')
+    fields = ('sku', 'new', 'image', 'discontinued', 'transparency')
+
 
 @admin.register(FulfillmentCenterCodeCountry)
 class FulfillmentCenterCodeCountryAdmin(admin.ModelAdmin):
     list_display = ('country', 'code')
+
 
 @admin.register(HistoryTodayProductSales)
 class HistoryTodayProductSalesAdmin(admin.ModelAdmin):
@@ -58,33 +61,41 @@ class HistoryTodayProductSalesAdmin(admin.ModelAdmin):
         ('date', admin.DateFieldListFilter),
     )
 
+
 @admin.register(HistoryTodaySales)
 class HistoryTodaySalesAdmin(admin.ModelAdmin):
     list_filter = (
         ('date', admin.DateFieldListFilter),
     )
 
+
 @admin.register(ProductionPlanProgress)
 class ProductionPlanProgressAdmin(admin.ModelAdmin):
-    list_display = [field.name for field in ProductionPlanProgress._meta.get_fields() if field.name not in ['production_stages']]
-    fields = [field.name for field in ProductionPlanProgress._meta.get_fields() if field.name not in ['id']]
+    list_display = [field.name for field in ProductionPlanProgress._meta.get_fields(
+    ) if field.name not in ['production_stages']]
+    fields = [field.name for field in ProductionPlanProgress._meta.get_fields(
+    ) if field.name not in ['id']]
 
     # list_display = ('production_plan_number', 'sku', 'qty', 'deadline_date', 'ongoing')
     # fields = ('production_plan_number', 'sku', 'qty', 'deadline_date', 'ongoing')
 
+
 @admin.register(ProductionStage)
 class ProductionStageAdmin(admin.ModelAdmin):
-    list_display = [field.name for field in ProductionStage._meta.get_fields() if field.name not in  ['productionplanprogress', 'productionstagetypeparameter', 'skuproductionstagetypeparameter']]
+    list_display = [field.name for field in ProductionStage._meta.get_fields() if field.name not in [
+        'productionplanprogress', 'productionstagetypeparameter', 'skuproductionstagetypeparameter']]
 
 
 @admin.register(DailyProductSalesAndInventory)
 class DailyProductSalesAndInventoryAdmin(admin.ModelAdmin):
     search_fields = ('sku', 'asin')
     ordering = ['-date']
-    list_display = [field.name for field in DailyProductSalesAndInventory._meta.get_fields()]
+    list_display = [
+        field.name for field in DailyProductSalesAndInventory._meta.get_fields()]
 
 
 @admin.register(SkuFnSkuAsinCountry)
 class SkuFnSkuAsinCountryAdmin(admin.ModelAdmin):
     search_fields = ('seller_sku', 'sku', 'asin', 'fnsku')
-    list_display = [field.name for field in SkuFnSkuAsinCountry._meta.get_fields()]
+    list_display = [
+        field.name for field in SkuFnSkuAsinCountry._meta.get_fields()]
