@@ -8,6 +8,8 @@ import pytz
 from dotenv import load_dotenv
 from sp_api.api import FulfillmentInbound
 from sp_api.base import Marketplaces
+from ad_api.base import Marketplaces as AdMarketplaces
+from ad_api.api.reports import Reports
 from comfyableAOA.settings import BASE_DIR
 from salesMonitor.models import FbaShipmentVJ, ReceivedSkuQtyVJ, Product, ShippedProductSkuQty
 
@@ -91,6 +93,44 @@ class FulfillmentInboundClient:
         return self.item_data
     
 
+class ReportsClient:
+    """广告相关"""
+    def __init__(self, params: dict) -> None:
+        self.params = params
+    
+    @property
+    def client(self) -> Reports:
+        return Reports(**self.params)
+    
+    def post_report(self):
+        data = """
+            {
+                "name":"SP campaigns report 2/1-2/1",
+                "startDate":"2024-02-01",
+                "endDate":"2024-02-02",
+                "configuration":{
+                    "adProduct":"SPONSORED_PRODUCTS",
+                    "groupBy":["campaign"],
+                    "columns":["cost","sales7d"],
+                    "reportTypeId":"spCampaigns",
+                    "timeUnit":"SUMMARY",
+                    "format":"GZIP_JSON"
+                }
+            }
+        """
+        resp = self.client.post_report(
+            body=data
+        )
+        print(resp.payload)
+    
+    def get_report(self, report_id: str):
+        resp = self.client.get_report(reportId=report_id)
+        print(resp.payload)
+
+    def download_report(self, url):
+        self.client.download_report(url=url, file=f"{BASE_DIR}/scripts/ad_report", format='json')
+
+
 def update_shipment(params: dict, country: str):
     client = FulfillmentInboundClient(params=params)
     shipment_close_threshold = {
@@ -142,5 +182,11 @@ def update_shipment(params: dict, country: str):
 
 
 def run():
-    update_shipment(params=dict(credentials=au_credentials, marketplace=Marketplaces.AU), country="AU")
-    update_shipment(params=dict(credentials=us_credentials, marketplace=Marketplaces.US), country="US")
+    # update_shipment(params=dict(credentials=au_credentials, marketplace=Marketplaces.AU), country="AU")
+    # update_shipment(params=dict(credentials=us_credentials, marketplace=Marketplaces.US), country="US")
+    client = ReportsClient(
+        params=dict(credentials=us_ad_credentials, marketplace=AdMarketplaces.US)
+    )
+    # client.post_report()
+    # client.get_report(report_id="5441528b-f78c-449b-96b1-1956ef8a5466")
+    client.download_report(url='https://offline-report-storage-us-east-1-prod.s3.amazonaws.com/5441528b-f78c-449b-96b1-1956ef8a5466-1708931157903/report-5441528b-f78c-449b-96b1-1956ef8a5466-1708931157903.json.gz?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEM%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIELldZ4LEAIpJzLnrCmyjyLSeycIsCQGjDb1TZjdHFLOAiEAkAzVTwWJTOt6mhkX2%2F0bX%2FKRCuzv%2FBoPMMphheM6rL4q6gUIuP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARACGgw4NDE2NDU1NDMwNzQiDO9MY84DjYA69f2o9yq%2BBcGYoq%2BzRvOT6qXrJ73yDVwwbt3hceGz5erMIz0pR%2BWZlkKKMU5P%2B3b96mIEUWnkWFsxVb%2FYhoUCaw4nwljNR6d2Qge1N424ZwsvS%2F4fT5vDeWxMMPh0ZE0HBXwWOPkI2J1EsVp6xbgwAFjOj6GDv020U90NuAdPaO6Zx1aPzOHFZvhpfvFczM5P31r3lmVpPXXwiUgxdpxc9Pq5xQIPVJ%2F8e11hzSEr3Oc%2B0kB9Ng78YTCLCWhfNnjGouFlzeg8KbV6%2FSBIteZDtw9TDNa2%2FHB5ENCziuOxwnQSrfY8vlKueiPrw%2Fg2oKlYJMKdin%2FTuU2dVaEWbb6yMGPK49TFFCa9cZeDD1Lo3tbGR8AGuYFFMKzgZbO8Pt8MNRQuwM41TAawwKVY%2Fg8w1t0%2BaWfwkDy%2BiFoBEvBMRlci8qkBAAAhq%2Bju5irRUlx8ghBPD9t0f%2B5IgDRi95eZrLBJsxWWTS8FtL2tyLXuBsgP%2BLhbSCwcSHGS1pOUh2TPLrJXdvb6Phh2QaXG%2BZWTFql7qzof5x3HpyejUqVHyQ0AwMhQnVjbkX%2FuGqeIeSDJz1fN298hlHWrxuVlMTDlDyr5JtRxYwIjHwWJ4XbVike5XCIgQn04Xm9B9QBgEwh3bIoKreyfNJgPKUrKTQ1JBGlcCZQGZlAnWrtFm69JN%2FmieS6di1aEiVOv6x1qyoY%2FOus9cnhvZvsrX4ftgLk5lM6nlVjimHkiggf1XRBDIi%2FT9huOQdXlSRvkg%2BEUKyJL4Ge0FOiZMsjWwHQiCvsiIwwFjB36fB%2FD7Kl1fgAPof7MkFZCcKf1MhLZ8tgl4nhE68ga2LVWkQPxfs6DyJNjncAipSbaa0%2FfQp%2FzSp5Noq%2Bw%2Fxb%2F%2BRV2miHBKCXKicRUJPlQ7GBDuCbg3QON%2FCqgH8buy4g2wSh27FhxHSQtwF4fap5CUDDM3%2FCuBjqpAS4yUAiUfFVdp0aEknZ4KWP4ZrZ4OfzDFUbeQ0MDzSKj9izMBZ0v2CQFNkyR5T4kQbjU%2FDh8FxxI6UsBvByJPkmwemGtv2FKix4hqMHc%2B2Pt%2FXvEbWmKgTXOgbxDkfYij9OSc7%2BqLIZvIxjlKQ80vA19DEiXJ2rXVINyZ3WMbHoBn9h%2BxqwkcZl8xLYC64KXO2kdO5swOEwnu%2FzrUugC8%2BAO7Y%2B8JFL7H18%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20240226T070750Z&X-Amz-SignedHeaders=host&X-Amz-Expires=3600&X-Amz-Credential=ASIA4H5P3Z2ROSRU34OB%2F20240226%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=a79a1f6023fa548a5f1151ddf0203b391ae046d2012c3d3f81571f599d958e5f')
