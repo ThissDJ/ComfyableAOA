@@ -1,10 +1,11 @@
 """
 python manage.py runscript advertising
 """
-
+import json
 import time
 import os
 import pytz
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from sp_api.api import FulfillmentInbound
 from sp_api.base import Marketplaces
@@ -43,6 +44,10 @@ us_ad_credentials = dict(
     client_secret=os.getenv("SELLING_PARTNER_APP_CLIENT_SECRET_US"),
     profile_id=os.getenv("AD_API_PROFILE_ID_US")
 )
+
+
+def get_now_date(zone):
+    return datetime.now(zone).date()
 
 
 class FulfillmentInboundClient:
@@ -95,14 +100,17 @@ class FulfillmentInboundClient:
 
 class ReportsClient:
     """广告相关"""
-    def __init__(self, params: dict) -> None:
+    def __init__(self, params: dict, start_date, end_date) -> None:
         self.params = params
+        self.start_date = start_date
+        self.end_date = end_date
+        print(f"ReportsClient init ... start_date={start_date}, end_date={end_date}")
     
     @property
     def client(self) -> Reports:
         return Reports(**self.params)
     
-    def post_report(self):
+    def post_report(self, body):
         data = """
             {
                 "name":"SP campaigns report 2/1-2/1",
@@ -119,9 +127,9 @@ class ReportsClient:
             }
         """
         resp = self.client.post_report(
-            body=data
+            body=body
         )
-        print(resp.payload)
+        return resp.payload
     
     def get_report(self, report_id: str):
         resp = self.client.get_report(reportId=report_id)
@@ -129,6 +137,29 @@ class ReportsClient:
 
     def download_report(self, url):
         self.client.download_report(url=url, file=f"{BASE_DIR}/scripts/ad_report", format='json')
+
+    def get_body(self, name, ad_product):
+        body = {
+                "name":name,
+                "startDate": self.start_date,
+                "endDate": self.end_date,
+                "configuration":{
+                    "adProduct": ad_product,
+                    "groupBy": ["campaign"],
+                    "columns": ["cost","sales7d", "startDate"],
+                    "reportTypeId": "spCampaigns",
+                    "timeUnit": "SUMMARY",
+                    "format": "GZIP_JSON"
+                }
+            }
+        return json.dumps(body)
+
+    def get_report_detail(self):
+        """
+        需要生成SPONSORED_PRODUCTS、SPONSORED_BRANDS、SPONSORED_DISPLAY三种报告
+        """
+        body = self.get_body(name="SP display campaigns report", ad_product="SPONSORED_DISPLAY")
+        print(self.post_report(body=body))
 
 
 def update_shipment(params: dict, country: str):
@@ -168,7 +199,7 @@ def update_shipment(params: dict, country: str):
         shipped_product_sku_qties = ShippedProductSkuQty.objects.filter(
             sku__in=shipement_sku_dict.get(shipment['ShipmentId'], [])
         ).all()
-        fba_shipemnt, _ = FbaShipmentVJ.objects.update_or_create(
+        fba_shipment, _ = FbaShipmentVJ.objects.update_or_create(
             defaults={
                 'shipment_name': shipment['ShipmentName'],
                 'country': country,
@@ -177,16 +208,21 @@ def update_shipment(params: dict, country: str):
             },
             shipment_id=shipment['ShipmentId'],
         )
-        fba_shipemnt.shipped_product_sku_qties.set(shipped_product_sku_qties)
-        fba_shipemnt.save()
+        fba_shipment.shipped_product_sku_qties.set(shipped_product_sku_qties)
+        fba_shipment.save()
 
 
 def run():
     # update_shipment(params=dict(credentials=au_credentials, marketplace=Marketplaces.AU), country="AU")
     # update_shipment(params=dict(credentials=us_credentials, marketplace=Marketplaces.US), country="US")
+    start_date = get_now_date(la_timezone) - timedelta(days=6)
+    end_date = get_now_date(la_timezone)
     client = ReportsClient(
-        params=dict(credentials=us_ad_credentials, marketplace=AdMarketplaces.US)
+        params=dict(credentials=us_ad_credentials, marketplace=AdMarketplaces.US),
+        start_date=start_date.strftime('%Y-%m-%d'),
+        end_date=end_date.strftime('%Y-%m-%d'),
     )
+    client.get_report_detail()
     # client.post_report()
     # client.get_report(report_id="5441528b-f78c-449b-96b1-1956ef8a5466")
-    client.download_report(url='https://offline-report-storage-us-east-1-prod.s3.amazonaws.com/5441528b-f78c-449b-96b1-1956ef8a5466-1708931157903/report-5441528b-f78c-449b-96b1-1956ef8a5466-1708931157903.json.gz?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEM%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIELldZ4LEAIpJzLnrCmyjyLSeycIsCQGjDb1TZjdHFLOAiEAkAzVTwWJTOt6mhkX2%2F0bX%2FKRCuzv%2FBoPMMphheM6rL4q6gUIuP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARACGgw4NDE2NDU1NDMwNzQiDO9MY84DjYA69f2o9yq%2BBcGYoq%2BzRvOT6qXrJ73yDVwwbt3hceGz5erMIz0pR%2BWZlkKKMU5P%2B3b96mIEUWnkWFsxVb%2FYhoUCaw4nwljNR6d2Qge1N424ZwsvS%2F4fT5vDeWxMMPh0ZE0HBXwWOPkI2J1EsVp6xbgwAFjOj6GDv020U90NuAdPaO6Zx1aPzOHFZvhpfvFczM5P31r3lmVpPXXwiUgxdpxc9Pq5xQIPVJ%2F8e11hzSEr3Oc%2B0kB9Ng78YTCLCWhfNnjGouFlzeg8KbV6%2FSBIteZDtw9TDNa2%2FHB5ENCziuOxwnQSrfY8vlKueiPrw%2Fg2oKlYJMKdin%2FTuU2dVaEWbb6yMGPK49TFFCa9cZeDD1Lo3tbGR8AGuYFFMKzgZbO8Pt8MNRQuwM41TAawwKVY%2Fg8w1t0%2BaWfwkDy%2BiFoBEvBMRlci8qkBAAAhq%2Bju5irRUlx8ghBPD9t0f%2B5IgDRi95eZrLBJsxWWTS8FtL2tyLXuBsgP%2BLhbSCwcSHGS1pOUh2TPLrJXdvb6Phh2QaXG%2BZWTFql7qzof5x3HpyejUqVHyQ0AwMhQnVjbkX%2FuGqeIeSDJz1fN298hlHWrxuVlMTDlDyr5JtRxYwIjHwWJ4XbVike5XCIgQn04Xm9B9QBgEwh3bIoKreyfNJgPKUrKTQ1JBGlcCZQGZlAnWrtFm69JN%2FmieS6di1aEiVOv6x1qyoY%2FOus9cnhvZvsrX4ftgLk5lM6nlVjimHkiggf1XRBDIi%2FT9huOQdXlSRvkg%2BEUKyJL4Ge0FOiZMsjWwHQiCvsiIwwFjB36fB%2FD7Kl1fgAPof7MkFZCcKf1MhLZ8tgl4nhE68ga2LVWkQPxfs6DyJNjncAipSbaa0%2FfQp%2FzSp5Noq%2Bw%2Fxb%2F%2BRV2miHBKCXKicRUJPlQ7GBDuCbg3QON%2FCqgH8buy4g2wSh27FhxHSQtwF4fap5CUDDM3%2FCuBjqpAS4yUAiUfFVdp0aEknZ4KWP4ZrZ4OfzDFUbeQ0MDzSKj9izMBZ0v2CQFNkyR5T4kQbjU%2FDh8FxxI6UsBvByJPkmwemGtv2FKix4hqMHc%2B2Pt%2FXvEbWmKgTXOgbxDkfYij9OSc7%2BqLIZvIxjlKQ80vA19DEiXJ2rXVINyZ3WMbHoBn9h%2BxqwkcZl8xLYC64KXO2kdO5swOEwnu%2FzrUugC8%2BAO7Y%2B8JFL7H18%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20240226T070750Z&X-Amz-SignedHeaders=host&X-Amz-Expires=3600&X-Amz-Credential=ASIA4H5P3Z2ROSRU34OB%2F20240226%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=a79a1f6023fa548a5f1151ddf0203b391ae046d2012c3d3f81571f599d958e5f')
+    # client.download_report(url='https://offline-report-storage-us-east-1-prod.s3.amazonaws.com/5441528b-f78c-449b-96b1-1956ef8a5466-1708931157903/report-5441528b-f78c-449b-96b1-1956ef8a5466-1708931157903.json.gz?X-Amz-Security-Token=IQoJb3JpZ2luX2VjENb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJGMEQCIGn4pDhSuE3hhoONYWTVnE7umQPgLYOWdaNVSP8gQzPoAiA9TGM1fbUUdbrJrp8M2OMkg9WqjVlfF8shzNzdToxe4CrqBQi%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAIaDDg0MTY0NTU0MzA3NCIMXOzAxo2US2gZlPvpKr4FJGKcujWSxPP3a6GMZJyCMlIfMWtphM7ahi1%2FTx6NVRqzpEe4FcIN0rkDKQ0i476ky6P20%2B0xX7LLNTaoqcYquim8fApMH07YbOZ8H7175KF6UMc592KMSenCucEMFspyjWwoK36qD0SAsot9LV1Ex8PTbIoib9wgkBV3w2d7XuO9nbWLrZBD%2FZF6%2FDlYUej6T4loYnm7r5ztHM3tnFyfXqQd3Cmq4Pm5n8Cfe4ZrOqjkaITU6kKEvjbddALue7mQ9iUPynIX58XcIOn2rIX29IdkelHj%2FgszeThscqtw1EUGsomvvpl0cN0ty1j%2BmgX4y%2FFkYNAT%2BXrKiYLLG7DuRq1duwRC0cZa5g8FrJiMVnwjv70G5PxMxEEu4%2BE32Yd3L%2BeAODR%2Fp%2Bq7k3loDrE7oNL0RGxjqC3r%2Ba9wB%2F8fKrKYIeVMvauwnIzaRNu%2FsSvbfNWEX%2B9LIxd%2BVJcB7Ndomoi9m3PMzXrx3VF8sUJxffodLpAoddwyiXsrYnE4DbDDNWCH7J7Zj0uMbnLfp6rcxxrZpqUlFfaL62wP5CuHN%2BkIzFZ4hZjreDT8diWsfvGzFHn1h0yjPpyz5JMxZIHbfecosjDXGYApjJD%2F2zf2r4iqpa3ClcaHMB%2Buh2sq3IshZ1dyFbdcENQvQwA1tNs1tZqTdS44WgYfGnelMxUeO3EGarzzcZ5ivIS9Qx5XffxBO%2FF%2BeY%2Fn44CzFfKgbyPv9bg3HugFMmFriZmD4YXXQvRDNqiY3Usr%2F2guZhAxESQa10%2F4Mz8tOVT%2B5sQ%2BooZZEjZh%2FV8inEMqkWc16BqVT%2B2u41bxrAykyA3XDFRg4yM1wbDLNBQfdyOqL%2FIynYaYIXjdXNaxOJcldSEPx3SFni8Kx2Y7s0d40187uhTYkqgGkchx4PG0mFu2QRm3nywds3dg5XeR79TJqAnud4uPMPqg8q4GOqoBCH0WUZKA1fp8K0PE9q4jCrS7m0Ovtpb9SNuhtN4KHjNxylmX0dXF2gdGazQdK2YykQYncEgreB87W9dA4RaEzZGcJLNcj3i1S%2FUzeciR6v%2B6U%2BkJZ1INe%2BAlfyxvIdcVIopepLhMADFm0PYNdCzL0z4IJ3IJu%2FKIOI3E%2Bu2xsdL%2FW6QNqQKN9zBYwEcoFzNZU%2F5AxhO%2BAaoEan8Sghcz3MW7LF2SvWv4tVY%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20240226T134455Z&X-Amz-SignedHeaders=host&X-Amz-Expires=3600&X-Amz-Credential=ASIA4H5P3Z2RBQB6SZG4%2F20240226%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=5eb0f0c55294b00bbffd025e2cbe3e0e9da1bc79a80826b91fabf823d023da49')
