@@ -140,18 +140,18 @@ class ReportsClient:
 
     def get_body(self, name, ad_product):
         body = {
-                "name":name,
-                "startDate": self.start_date,
-                "endDate": self.end_date,
-                "configuration":{
-                    "adProduct": ad_product,
-                    "groupBy": ["campaign"],
-                    "columns": ["cost","sales7d", "startDate"],
-                    "reportTypeId": "spCampaigns",
-                    "timeUnit": "SUMMARY",
-                    "format": "GZIP_JSON"
-                }
+            "name": name,
+            "startDate": self.start_date,
+            "endDate": self.end_date,
+            "configuration": {
+                "adProduct": ad_product,
+                "groupBy": ["campaign"],
+                "columns": ["cost", "sales", "startDate"],
+                "reportTypeId": "sdCampaigns",
+                "timeUnit": "SUMMARY",
+                "format": "GZIP_JSON"
             }
+        }
         return json.dumps(body)
 
     def get_report_detail(self):
