@@ -116,7 +116,7 @@ class ReceivedSkuQtyVJAdmin(admin.ModelAdmin):
 @admin.register(FbaShipmentVJ)
 class FbaShipmentVJAdmin(admin.ModelAdmin):
     search_fields = ('shipment_id', 'shipment_name')
-    list_display = [field.name for field in FbaShipmentVJ._meta.get_fields()]
+    list_display = ['shipment_id', 'shipment_name', 'country', 'closed']
 
 
 @admin.register(ShippedProductSkuQty)
