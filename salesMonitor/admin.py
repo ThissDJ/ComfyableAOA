@@ -122,4 +122,4 @@ class FbaShipmentVJAdmin(admin.ModelAdmin):
 @admin.register(ShippedProductSkuQty)
 class ShippedProductSkuQtyAdmin(admin.ModelAdmin):
     search_fields = ('sku', )
-    list_display = [field.name for field in ShippedProductSkuQty._meta.get_fields()]
+    list_display = ['sku', 'qty']
