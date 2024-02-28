@@ -212,4 +212,8 @@ media
 assets
 static
 ad_report.json
+display_report.json
+product_report.json
+brands_report.json
 .idea
+*.json
