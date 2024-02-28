@@ -110,7 +110,7 @@ class ReportsClient:
         self.base_file = f"{BASE_DIR}/scripts/{self.country}_"
         # 记录报告数据
         self.display_data = []
-        self.poduct_data = []
+        self.product_data = []
         self.brands_data = []
         print(f"ReportsClient {country} init ... start_date={start_date}, end_date={end_date}")
     
@@ -133,7 +133,7 @@ class ReportsClient:
         
         return ""
     
-    def get_report(self, report_id: str, retry_num=30):
+    def get_report(self, report_id: str, retry_num=50):
         """
         {'configuration': {'adProduct': 'SPONSORED_DISPLAY', 'columns': ['cost', 'sales', 'startDate'], 'filters': None, 'format': 'GZIP_JSON', 'groupBy': ['campaign'], 'reportTypeId': 'sdCampaigns', 'timeUnit': 'SUMMARY'}, 'createdAt': '2024-02-28T03:56:24.397Z', 'endDate': '2024-02-27', 'failureReason': None, 'fileSize': 72, 'generatedAt': '2024-02-28T03:57:30.409Z', 'name': 'SP display campaigns report', 'reportId': '3f058019-ec9f-4e46-b2be-1959d6214f90', 'startDate': '2024-02-21', 'status': 'COMPLETED', 'updatedAt': '2024-02-28T03:57:30.409Z', 'url': 'https://offline-report-storage-us-east-1-prod.s3.amazonaws.com/3f058019-ec9f-4e46-b2be-1959d6214f90-1709092589834/report-3f058019-ec9f-4e46-b2be-1959d6214f90-1709092589834.json.gz?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEPz%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIQDTiVo0Q%2FzVvASPCtI7lpdjN4VqmAnxDsJVxNtVxvAh4wIgQO61G2KI4%2FanBE0mQFHbs8okalLDEeRP5z3z37Lh7Jsq6gUI5P%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARACGgw4NDE2NDU1NDMwNzQiDF9XksyaMO4pqVprXCq%2BBZ9%2FZAJWxDMx5CeqD9rpYHCJpouUqJTnhPPmm0nhiJzxAa6545pzHQWFV0Zq6hzxzlwwnvbYjbLXhOuQq%2BUC%2FiN8CjiF0GXJhH3pu24FVM8czCbxFQ4%2BnyUHxvutNwXDEvTPaFF0jchNV5DPaY7sLBNkI84OnUlTWGMGONplOo5xg2C8QIOcf1%2F5uLg%2FrNoO7b0qtO5SxkNDcXCxG9egLAx9LXoNHII%2BKoOiPYh5Xd02XsY1fLcle1XO3izwCBm7ubke6kOMvCBN3e5kHGd48nFuXFL3TQGeZ9rukSo0RJs82Y%2F4dh%2BWN2Y64nJiU0fd%2FDOK2ab6NfW2JXc7QDnQvX5Pq8s5%2FiPUBljxid2otN3Dci14DfudDPrsTQqpjY%2Fki3dQLlIPYYMl0w9OnmniOSganWBhrBG8d73JE%2BflQOO8f9bkuOqitVUAfsA9jPpaG45w%2FsY3Q%2F9Q5Hmyagfk9kCbmVbJdTK8s%2BGTrD8YWJv6qLevqPVYmCuHKQndTZ0HRF6U7Kv4axTYQ55CcaNt%2BvE0ZJsdvXfLvqutpPyuh6HsP9dm2XVsKxd1o93tnF%2F%2FkHaEKhwSxeaICInUNx58QN7ee2%2Fm2mMBwo0JRg0utFYZNSxVT0cePdpvJzg%2Bf5NYzSBk7WsO0CmSRZW6lfg%2B8utwcgc%2BdQMsGRY1pA7pJHubbuxXc891d6QXvuYSO7RqRNOVzIEcwEGRsRWxKgsa3W82er%2BdHJlNBcTjvJJNa7ddx0gEZXVE94IrNaSc6vGCr8bEf%2BHuNlf1m8wvodRAhcs%2Fs8%2FQEgNrHFlbndFKCrhgVa%2FTlyVDJPARbzJqSI%2BM5NamBAyBBWy1cVFrN1ZUoln1UuVp6XlZKOvc7W9kJ8tu6shdkOhQDb6B8CWUvv1NQyvVKlUn9Z%2FK5pegm52I%2B63rlIdDV3jCcZQem40YATCdzfquBjqpAbYnsmw8VTO3k2S5b2f%2Fb0o8gH7ld1Hg8a548JigpRCMl%2FAOIeCsqmF2wHfVDCazBF4lM%2BTOf2Mg3IjrmdU9P5W4MZx2DfS%2Bk2nEK2I2AqrBnMajLenvvWP6tTFGCBDnmBqzIaabwyEIEd2XN0uT7F8bju5YeF%2BP0PnJaebiJW8maZ2UHk9p%2Boa7i7kUwSHwNgW4Dm7BxtT4xDOOUpODKPlc8LKTuQZyQao%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20240228T035731Z&X-Amz-SignedHeaders=host&X-Amz-Expires=3599&X-Amz-Credential=ASIA4H5P3Z2REL37ZC55%2F20240228%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=0816d0140427aebc15c1929a666085ed075a678d1a77a9cfa94c27af72fa1f2e', 'urlExpiresAt': '2024-02-28T04:57:31.364988Z'}
         """
