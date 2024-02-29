@@ -734,7 +734,7 @@ class ShippedReceivedSkuQty(models.Model):
     closed = models.BooleanField(default=False)
 
     def __str__(self):
-        return '%s : %i : %i :  %s' % (self.sku, self.shipped_qty, self.received_qty, self.shipment_id)
+        return '%s : %i : %i :  %s' % (self.sku, self.shipped_qty, self.received_qty, self.fba_shopment_vj.shipment_id)
 
     @property
     def unreceived(self):
