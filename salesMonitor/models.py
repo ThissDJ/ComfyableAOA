@@ -709,17 +709,6 @@ class SkuFnSkuAsinCountry(models.Model):
         unique_together = ('seller_sku', 'sku', 'asin', 'fnsku', 'country')
 
 
-# the shipped product in FBA shipment
-# Update every 30 minutes
-class ShippedProductSkuQty(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.DO_NOTHING)
-    sku = models.CharField(max_length=30, unique=False, default="")
-    qty = models.IntegerField(default=0)
-
-    def __str__(self):
-        return '%s : %i' % (self.sku, self.qty)
-
-
 # FBA shipment. VJ version
 # fc_code stands for fulfillment center code
 # Update every 30 minutes
@@ -731,22 +720,25 @@ class FbaShipmentVJ(models.Model):
     shipment_id = models.CharField(max_length=15, unique=True)
     shipment_name = models.CharField(max_length=50, unique=True)
     country = models.CharField(max_length=2, unique=False, default="US")
-    shipped_product_sku_qties = models.ManyToManyField(ShippedProductSkuQty)
     closed = models.BooleanField(default=False)
 
     def __str__(self):
         return '%s' % (self.shipment_id)
+    
 
-
-# Received Sku & Qty of a FBA shipment. VJ version
-# Update every 30 minutes
-class ReceivedSkuQtyVJ(models.Model):
-    shipment_id = models.CharField(max_length=15, unique=False)
+class ShippedReceivedSkuQty(models.Model):
+    fba_shopment_vj = models.ForeignKey(FbaShipmentVJ, on_delete=models.DO_NOTHING)
     sku = models.CharField(max_length=30, unique=False, default="")
-    qty = models.IntegerField(default=0)
+    shipped_qty = models.IntegerField(default=0)
+    received_qty = models.IntegerField(default=0)
+    closed = models.BooleanField(default=False)
 
     def __str__(self):
-        return '%s : %i : %s' % (self.sku, self.qty, self.shipment_id)
+        return '%s : %i : %i :  %s' % (self.sku, self.shipped_qty, self.received_qty, self.shipment_id)
+
+    @property
+    def unreceived(self):
+        return max(0, self.shipped_qty - self.received_qty)
 
 
 # Please combine all the European countries except for GB to be EU

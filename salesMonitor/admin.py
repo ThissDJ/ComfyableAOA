@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DownloadedReport, FbaShipmentVJ, PaymentTransactionDetail, Product, ReceivedSkuQtyVJ, ShippedProductSkuQty, TodayProductSales, Last7dayProductSales, \
+from .models import DownloadedReport, FbaShipmentVJ, PaymentTransactionDetail, Product, TodayProductSales, Last7dayProductSales, \
     DailySalesLastYear, FbaInventory, Inventory, ReceivablePurchasedQty, FulfillmentCenterCodeCountry, \
     HistoryTodayProductSales, HistoryTodaySales, \
     FbaShipment, ShippedSkuQty, ReceivedSkuQty, RemoteFulfillmentSku, Upc, SkuUpc, FbaShipmentPaidBill, \
@@ -10,7 +10,7 @@ from .models import DownloadedReport, FbaShipmentVJ, PaymentTransactionDetail, P
     ProfitLossTable, \
     CurrencyRate, \
     ProductionPlanProgress, ProductionStage, ProductionPlanProgress, ProductionStageTypeParameter, \
-    SkuProductionStageTypeParameter, DailyProductSalesAndInventory, SkuFnSkuAsinCountry, AdPerformaceDaily
+    SkuProductionStageTypeParameter, DailyProductSalesAndInventory, SkuFnSkuAsinCountry, AdPerformaceDaily, ShippedReceivedSkuQty
 
 # admin.site.register(Product)
 admin.site.register(TodayProductSales)
@@ -107,19 +107,13 @@ class AdPerformaceDailyAdmin(admin.ModelAdmin):
     list_display = ['country', 'date', 'cost', 'ad_sales']
 
 
-@admin.register(ReceivedSkuQtyVJ)
-class ReceivedSkuQtyVJAdmin(admin.ModelAdmin):
-    search_fields = ('shipment_id', 'sku')
-    list_display = ['shipment_id', 'sku', 'qty']
-
-
 @admin.register(FbaShipmentVJ)
 class FbaShipmentVJAdmin(admin.ModelAdmin):
     search_fields = ('shipment_id', 'shipment_name')
     list_display = ['shipment_id', 'shipment_name', 'country', 'closed']
 
 
-@admin.register(ShippedProductSkuQty)
-class ShippedProductSkuQtyAdmin(admin.ModelAdmin):
+@admin.register(ShippedReceivedSkuQty)
+class ShippedReceivedSkuQtyAdmin(admin.ModelAdmin):
     search_fields = ('sku', )
-    list_display = ['sku', 'qty']
+    list_display = ['sku', 'shipped_qty', 'received_qty', 'closed']

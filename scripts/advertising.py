@@ -14,7 +14,7 @@ from sp_api.base import Marketplaces
 from ad_api.base import Marketplaces as AdMarketplaces
 from ad_api.api.reports import Reports
 from comfyableAOA.settings import BASE_DIR
-from salesMonitor.models import AdPerformaceDaily, FbaShipmentVJ, ReceivedSkuQtyVJ, Product, ShippedProductSkuQty
+from salesMonitor.models import AdPerformaceDaily, FbaShipmentVJ, ShippedReceivedSkuQty
 
 
 utc_timezone = pytz.timezone('UTC')
@@ -302,46 +302,36 @@ def update_shipment(params: dict, country: str):
     }
     item_data = client.get_shipment_info()
     shipment_data = client.shipment_data
-    shipement_sku_dict = client.shipement_sku_dict
     shipement_closed_dict = {}
     for item in item_data:
         # 未收货的数量
         unreceived = item['QuantityShipped'] - item['QuantityReceived']
         if unreceived >= shipment_close_threshold[country]:
             shipement_closed_dict[item['ShipmentId']] = False
-
-        # update ReceivedSkuQtyVJ model
-        ReceivedSkuQtyVJ.objects.update_or_create(
-            defaults={'qty': item['QuantityShipped'] + item['QuantityReceived']},
-            shipment_id=item['ShipmentId'],
-            sku=item['SellerSKU'],
-        )
     
-        # update ShippedProductSkuQty model
-        product = Product.objects.filter(sku=item['SellerSKU']).first()
-        if product:
-            ShippedProductSkuQty.objects.update_or_create(
-                defaults={'qty': item['QuantityShipped'] + item['QuantityReceived']},
-                sku=item['SellerSKU'],
-                product=product,
-            )
-
+    fba_shipment_dict = dict()
     for shipment in shipment_data:
         # update FbaShipmentVJ model
-        shipped_product_sku_qties = ShippedProductSkuQty.objects.filter(
-            sku__in=shipement_sku_dict.get(shipment['ShipmentId'], [])
-        ).all()
         fba_shipment, _ = FbaShipmentVJ.objects.update_or_create(
             defaults={
                 'shipment_name': shipment['ShipmentName'],
-                'country': country,
-                # 'shipped_product_sku_qties': shipped_product_sku_qties,
                 'closed': shipement_closed_dict.get(shipment['ShipmentId'], True)
             },
             shipment_id=shipment['ShipmentId'],
+            country=country,
         )
-        fba_shipment.shipped_product_sku_qties.set(shipped_product_sku_qties)
-        fba_shipment.save()
+        fba_shipment_dict[shipment['ShipmentId']] = fba_shipment
+    for item in item_data:
+        ShippedReceivedSkuQty.objects.update_or_create(
+            defaults={
+                'shipped_qty': item['QuantityShipped'],
+                'received_qty': item['QuantityReceived'],
+                'closed': shipement_closed_dict.get(shipment['ShipmentId'], True)
+            },
+            fba_shopment_vj=fba_shipment_dict[item['ShipmentId']],
+            sku=item['SellerSKU'],
+        )
+        
     print(f"[{country}] update_shipment finish!")
 
 
