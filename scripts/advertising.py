@@ -332,10 +332,10 @@ def update_shipment(params: dict, country: str):
                 'shipped_qty': item['QuantityShipped'],
                 'received_qty': item['QuantityReceived'],
                 'unreceived_qty': max(0, item['QuantityShipped'] - item['QuantityReceived']),
+                'country': country,
             },
             fba_shopment_vj=fba_shipment,
             sku=item['SellerSKU'],
-            country=country,
         )
         
     print(f"[{country}] update_shipment finish!")
