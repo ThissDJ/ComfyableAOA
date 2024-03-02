@@ -1050,7 +1050,10 @@ def save_today_sales(**kwargs):
     year = year_month_day['year']
     month = year_month_day['month']
     day = year_month_day['day']
-    dailySalesLastYear = DailySalesLastYear.objects.filter(month = month, day = day).all()[0]
+    if DailySalesLastYear.objects.filter(month = month, day = day).count():
+        dailySalesLastYear = DailySalesLastYear.objects.filter(month = month, day = day).all()[0]
+    elif month==2 and day==29:
+        dailySalesLastYear = DailySalesLastYear.objects.filter(month = 3, day = 1).all()[0]
     from django.core.exceptions import ObjectDoesNotExist
     try:
         dailySalesLastYear = DailySalesLastYear.objects.get(pk = dailySalesLastYear.pk + 1)
