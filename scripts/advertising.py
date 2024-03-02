@@ -321,8 +321,8 @@ def update_shipment(params: dict, country: str):
             country=country,
         )
         fba_shipment_dict[shipment['ShipmentId']] = fba_shipment
-        deleted = ShippedReceivedSkuQty.objects.filter(fba_shopment_vj=fba_shipment).delete()
-        print(f"delete {fba_shipment}/{fba_shipment.shipment_id} [{deleted}]")
+        deleted = ShippedReceivedSkuQty.objects.filter(fba_shopment_vj=fba_shipment, country=country).delete()
+        print(f"delete {country} {fba_shipment}/{fba_shipment.shipment_id} [{deleted}]")
     for item in item_data:
         fba_shipment: FbaShipmentVJ = fba_shipment_dict[item['ShipmentId']]
         if fba_shipment.closed:
@@ -335,6 +335,7 @@ def update_shipment(params: dict, country: str):
             },
             fba_shopment_vj=fba_shipment,
             sku=item['SellerSKU'],
+            country=country,
         )
         
     print(f"[{country}] update_shipment finish!")
