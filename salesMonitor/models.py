@@ -731,14 +731,15 @@ class ShippedReceivedSkuQty(models.Model):
     sku = models.CharField(max_length=30, unique=False, default="")
     shipped_qty = models.IntegerField(default=0)
     received_qty = models.IntegerField(default=0)
-    closed = models.BooleanField(default=False)
+    unreceived_qty = models.IntegerField(default=0)
+    country = models.CharField(max_length=2, unique=False, default="US")
 
     def __str__(self):
-        return '%s : %i : %i :  %s' % (self.sku, self.shipped_qty, self.received_qty, self.fba_shopment_vj.shipment_id)
+        return '%s : %i : %i : %i:  %s: %s' % (self.sku, self.shipped_qty, self.received_qty, self.unreceived_qty, self.fba_shopment_vj.shipment_id, self.country)
 
-    @property
-    def unreceived(self):
-        return max(0, self.shipped_qty - self.received_qty)
+    # @property
+    # def unreceived(self):
+    #     return max(0, self.shipped_qty - self.received_qty)
 
 
 # Please combine all the European countries except for GB to be EU
