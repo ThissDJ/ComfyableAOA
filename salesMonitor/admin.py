@@ -115,5 +115,5 @@ class FbaShipmentVJAdmin(admin.ModelAdmin):
 
 @admin.register(ShippedReceivedSkuQty)
 class ShippedReceivedSkuQtyAdmin(admin.ModelAdmin):
-    search_fields = ('sku', 'fba_shipment_vj__shipment_id', 'country')
+    search_fields = ('sku', 'fba_shopment_vj__shipment_id', 'country')
     list_display = ['sku', 'shipped_qty', 'received_qty', 'unreceived_qty', 'country']
