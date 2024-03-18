@@ -719,7 +719,7 @@ class ShippedProductSkuQty(models.Model):
     estimated_receiving_date = models.DateField(null=True)
 
     def __str__(self):
-         return '%s : %i' %(self.sku, self.qty)
+        return '%s : %i' % (self.sku, self.qty)
 
 
 # FBA shipment. VJ version
