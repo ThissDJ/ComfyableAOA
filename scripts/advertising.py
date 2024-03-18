@@ -2,6 +2,7 @@
 python manage.py runscript advertising
 """
 import json
+import re
 import time
 import os
 import pytz
@@ -50,6 +51,26 @@ us_ad_credentials = dict(
 
 def get_now_date(zone):
     return datetime.now(zone).date()
+
+
+def get_date_by_shipment_name(shipment_name: str):
+    """从货件名称上提取日期"""
+    date_patterns = [
+        re.compile(r'(\d{4})/(\d{2})/(\d{2})'),  # 匹配 YYYY/MM/DD 格式
+        re.compile(r'(\d{2})/(\d{2})/(\d{4})'),  # 匹配 MM/DD/YYYY 格式
+        re.compile(r'(\d{4})(\d{2})(\d{2})')  # 匹配 YYYYMMDD 格式
+    ]
+    for pattern in date_patterns:
+        match = pattern.search(shipment_name)
+        if match:
+            try:
+                if len(match.groups()) == 3:
+                    year, month, day = match.groups()
+                    date_obj = datetime(year=int(year), month=int(month), day=int(day))
+                    formatted_date = date_obj.strftime('%Y-%m-%d')
+                    return formatted_date
+            except ValueError:
+                print(f"get_date_by_shipment_name {shipment_name} ValueError")
 
 
 class FulfillmentInboundClient:
@@ -323,6 +344,7 @@ def update_shipment(params: dict, country: str):
         fba_shipment_dict[shipment['ShipmentId']] = fba_shipment
         deleted = ShippedReceivedSkuQty.objects.filter(fba_shopment_vj=fba_shipment).delete()
         print(f"delete {country} {fba_shipment}/{fba_shipment.shipment_id} [{deleted}]")
+
     for item in item_data:
         fba_shipment: FbaShipmentVJ = fba_shipment_dict[item['ShipmentId']]
         if fba_shipment.closed:
