@@ -10,7 +10,7 @@ from .models import DownloadedReport, FbaShipmentVJ, PaymentTransactionDetail, P
     ProfitLossTable, \
     CurrencyRate, \
     ProductionPlanProgress, ProductionStage, ProductionPlanProgress, ProductionStageTypeParameter, \
-    SkuProductionStageTypeParameter, DailyProductSalesAndInventory, SkuFnSkuAsinCountry, AdPerformaceDaily, ShippedReceivedSkuQty
+    SkuProductionStageTypeParameter, DailyProductSalesAndInventory, SkuFnSkuAsinCountry, AdPerformaceDaily, ShippedReceivedSkuQty, ShippedProductSkuQty
 
 # admin.site.register(Product)
 admin.site.register(TodayProductSales)
@@ -110,10 +110,16 @@ class AdPerformaceDailyAdmin(admin.ModelAdmin):
 @admin.register(FbaShipmentVJ)
 class FbaShipmentVJAdmin(admin.ModelAdmin):
     search_fields = ('shipment_id', 'shipment_name')
-    list_display = ['shipment_id', 'shipment_name', 'country', 'closed']
+    list_display = ['shipment_id', 'shipment_name', 'shipped_date', 'country', 'closed']
 
 
 @admin.register(ShippedReceivedSkuQty)
 class ShippedReceivedSkuQtyAdmin(admin.ModelAdmin):
     search_fields = ('sku', 'fba_shopment_vj__shipment_id', 'country')
     list_display = ['sku', 'shipped_qty', 'received_qty', 'unreceived_qty', 'country']
+
+
+@admin.register(ShippedProductSkuQty)
+class ShippedProductSkuQtyAdmin(admin.ModelAdmin):
+    search_fields = ('sku', )
+    list_display = ['sku', 'qty', 'shipped_date', 'estimated_receiving_date']
