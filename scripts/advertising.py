@@ -339,14 +339,14 @@ def update_shipment(params: dict, country: str):
             if not shipped_date:
                 print(f"not shipped_date {item['ShipmentName']}")
 
-            shipped_product_sku_qtie, _ = ShippedProductSkuQty.objects.update_or_create(
+            ShippedProductSkuQty.objects.update_or_create(
                 defaults={},
                 sku=item['SellerSKU'],
                 shipped_date=shipped_date,
                 product=product,
                 qty=item['QuantityShipped'],
             )
-            shipped_product_sku_qties_dict[item['ShipmentId']].append(shipped_product_sku_qtie)
+            shipped_product_sku_qties_dict[item['ShipmentId']].append(item['SellerSKU'])
     
     fba_shipment_dict = dict()
     for shipment in shipment_data:
@@ -361,11 +361,12 @@ def update_shipment(params: dict, country: str):
             shipment_id=shipment['ShipmentId'],
             country=country,
         )
-        shipped_product_sku_qties = shipped_product_sku_qties_dict.get(shipment['ShipmentId'], [])
-        for shipped_product_sku_qtie in shipped_product_sku_qties:
-            fba_shipment.shipped_product_sku_qties.add(shipped_product_sku_qtie)
-        fba_shipment.save(update_fields=['shipped_product_sku_qties'])
-        
+        sku_list = shipped_product_sku_qties_dict.get(shipment['ShipmentId'], [])
+        shipped_product_sku_qties = ShippedProductSkuQty.objects.filter(sku__in=sku_list).all()
+
+        fba_shipment.shipped_product_sku_qties.add(*shipped_product_sku_qties)
+        fba_shipment.save()
+
         fba_shipment_dict[shipment['ShipmentId']] = fba_shipment
         deleted = ShippedReceivedSkuQty.objects.filter(fba_shopment_vj=fba_shipment).delete()
         print(f"delete {country} {fba_shipment}/{fba_shipment.shipment_id} [{deleted}]")
