@@ -1,11 +1,10 @@
-from salesMonitor.models import DailyProductSalesAndInventory
-from django.db import connection
+from salesMonitor.models import ShippedProductSkuQty, FbaShipmentVJ, ShippedReceivedSkuQty
 
 
 def run():
-    # print(DailyProductSalesAndInventory.objects.filter())
+    print(ShippedProductSkuQty.objects.all().delete())
 
-    cursor = connection.cursor()
-    cursor.execute("select * from django_migrations")
-    raw = cursor.fetchall()
-    print(raw)
+    print(FbaShipmentVJ.objects.all().delete())
+
+    print(ShippedReceivedSkuQty.objects.all().delete())
+    

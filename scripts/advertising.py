@@ -340,11 +340,13 @@ def update_shipment(params: dict, country: str):
                 print(f"not shipped_date {item['ShipmentName']}")
 
             ShippedProductSkuQty.objects.update_or_create(
-                defaults={},
+                defaults={
+                    'shipped_date': shipped_date,
+                    'product': product,
+                    'qty': item['QuantityShipped'],
+                },
                 sku=item['SellerSKU'],
-                shipped_date=shipped_date,
-                product=product,
-                qty=item['QuantityShipped'],
+                shipment_id=item['ShipmentId'],
             )
             shipped_product_sku_qties_dict[item['ShipmentId']].append(item['SellerSKU'])
     
@@ -362,9 +364,12 @@ def update_shipment(params: dict, country: str):
             country=country,
         )
         sku_list = shipped_product_sku_qties_dict.get(shipment['ShipmentId'], [])
-        shipped_product_sku_qties = ShippedProductSkuQty.objects.filter(sku__in=sku_list).all()
+        shipped_product_sku_qties = ShippedProductSkuQty.objects.filter(
+            sku__in=sku_list,
+            shipment_id=shipment['ShipmentId'],
+        ).all()
 
-        fba_shipment.shipped_product_sku_qties.add(*shipped_product_sku_qties)
+        fba_shipment.shipped_product_sku_qties.set(*shipped_product_sku_qties)
         fba_shipment.save()
 
         fba_shipment_dict[shipment['ShipmentId']] = fba_shipment
