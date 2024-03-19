@@ -369,7 +369,7 @@ def update_shipment(params: dict, country: str):
             shipment_id=shipment['ShipmentId'],
         ).all()
 
-        fba_shipment.shipped_product_sku_qties.set(*shipped_product_sku_qties)
+        fba_shipment.shipped_product_sku_qties.set(shipped_product_sku_qties)
         fba_shipment.save()
 
         fba_shipment_dict[shipment['ShipmentId']] = fba_shipment
