@@ -365,7 +365,7 @@ def update_shipment(params: dict, country: str):
         )
         sku_list = shipped_product_sku_qties_dict.get(shipment['ShipmentId'], [])
         shipped_product_sku_qties = ShippedProductSkuQty.objects.filter(
-            sku__in=sku_list,
+            sku__in=list(set(sku_list)),
             shipment_id=shipment['ShipmentId'],
         ).all()
 
