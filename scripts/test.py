@@ -3,8 +3,5 @@ from salesMonitor.models import ShippedProductSkuQty, FbaShipmentVJ, ShippedRece
 
 def run():
     print(ShippedProductSkuQty.objects.all().delete())
-
-    print(FbaShipmentVJ.objects.all().delete())
-
     print(ShippedReceivedSkuQty.objects.all().delete())
-    
+    print(FbaShipmentVJ.objects.all().delete())
